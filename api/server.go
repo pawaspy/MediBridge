@@ -26,7 +26,9 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	router.POST("")
+	router.POST("/api/createuser", server.createUser)
+
+	server.router = router
 }
 
 func (server *Server) Start(address string) error {
