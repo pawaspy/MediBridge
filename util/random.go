@@ -8,10 +8,6 @@ import (
 
 const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func RandomInt(min, max int64) int64{
-	return min + rand.Int63n(max - min + 1)
-}
-
 func RandomString(n int) string {
 	var sb strings.Builder
 
@@ -27,4 +23,8 @@ func RandomString(n int) string {
 
 func RandomEmail() string {
 	return fmt.Sprintf("%s@gmail.com", RandomString(6))
+}
+
+func RandomOwner() string {
+	return RandomString(6)
 }
