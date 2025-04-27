@@ -6,6 +6,7 @@ type Config struct {
 	DBSource string `mapstructure:"DB_SOURCE"`
 	Environment string `mapstructure:"ENVIRONMENT"`
 	HTTPAddress string `mapstructure:"HTTP_ADDRESS"`
+	TokenSymmetricKey string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
