@@ -13,16 +13,18 @@ import (
 
 const createSellerProfile = `-- name: CreateSellerProfile :one
 INSERT INTO seller_profiles (
+    username,
     shop_name,
     license_number,
     shop_address,
     phone_number
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING username, shop_name, license_number, shop_address, phone_number
 `
 
 type CreateSellerProfileParams struct {
+	Username      string `json:"username"`
 	ShopName      string `json:"shop_name"`
 	LicenseNumber string `json:"license_number"`
 	ShopAddress   string `json:"shop_address"`
@@ -31,6 +33,7 @@ type CreateSellerProfileParams struct {
 
 func (q *Queries) CreateSellerProfile(ctx context.Context, arg CreateSellerProfileParams) (SellerProfile, error) {
 	row := q.db.QueryRow(ctx, createSellerProfile,
+		arg.Username,
 		arg.ShopName,
 		arg.LicenseNumber,
 		arg.ShopAddress,

@@ -1,11 +1,12 @@
 -- name: CreateSellerProfile :one
 INSERT INTO seller_profiles (
+    username,
     shop_name,
     license_number,
     shop_address,
     phone_number
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING *;
 
 -- name: GetSellerProfile :one

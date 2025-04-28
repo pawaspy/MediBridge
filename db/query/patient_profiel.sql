@@ -1,11 +1,12 @@
 -- name: CreatePatientProfile :one
 INSERT INTO patient_profiles (
+    username,
     age,
     blood_group,
     allergies,
     phone_number
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING *;
 
 -- name: GetPatientProfile :one

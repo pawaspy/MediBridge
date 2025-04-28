@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/pawaspy/MediBridge/db/sqlc"
+	"github.com/pawaspy/MediBridge/token"
 	"github.com/pawaspy/MediBridge/util"
 )
 
@@ -66,7 +68,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return 
+		return
 	}
 	rsp := newUserResponse(user)
 	ctx.JSON(http.StatusOK, rsp)
@@ -78,7 +80,9 @@ type loginUserRequest struct {
 }
 
 type loginUserResponse struct {
-	User userResponse `json:"user"`
+	AccessToken          string       `json:"access_token"`
+	AccessTokenExpiresAt time.Time    `json:"access_token_expires_at"`
+	User                 userResponse `json:"user"`
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
@@ -90,7 +94,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	user, err := server.store.GetUser(ctx, req.Username)
 	if err != nil {
-		if errors.Is(err, db.ErrRecordNotFound)  {
+		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -103,9 +107,83 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(user.Username, string(user.Role), server.config.TokenDuration)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	rsp := loginUserResponse{
+		AccessToken: accessToken,
+		AccessTokenExpiresAt: accessPayload.ExpiredAt,
 		User: newUserResponse(user),
 	}
 
 	ctx.JSON(http.StatusOK, rsp)
+}
+
+type updateUserRequest struct {
+	Username *string `json:"username" binding:"required"`
+	Password *string `json:"password" binding:"omitempty,min=6"`
+	FullName *string `json:"full_name" binding:"omitempty"`
+	Email    *string `json:"email" binding:"omitempty,email"`
+}
+
+func (server *Server) updateUser(ctx *gin.Context) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	var req updateUserRequest
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if *req.Username == "" && *req.Username != authPayload.Username {
+		err := errors.New("cannot update other users' info")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	arg := db.UpdateUserParams{
+		Username: authPayload.Username,
+	}
+
+	if req.FullName != nil {
+		arg.FullName = pgtype.Text{
+			String: *req.FullName,
+			Valid:  true,
+		}
+	}
+
+	if req.Email != nil {
+		arg.Email = pgtype.Text{
+			String: *req.Email,
+			Valid:  true,
+		}
+	}
+
+	if req.Password != nil {
+		hashedPassword, err := util.HashPassword(*req.Password)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		arg.HashedPassword = pgtype.Text{
+			String: hashedPassword,
+			Valid:  true,
+		}
+		arg.PasswordChangedAt = pgtype.Timestamptz{
+			Time:  time.Now(),
+			Valid: true,
+		}
+	}
+
+	user, err := server.store.UpdateUser(ctx, arg)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, newUserResponse(user))
 }

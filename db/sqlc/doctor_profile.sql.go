@@ -13,16 +13,18 @@ import (
 
 const createDoctorProfile = `-- name: CreateDoctorProfile :one
 INSERT INTO doctor_profiles(
+    username,
     specialization,
     experience_years,
     clinic_address,
     phone_number
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING username, specialization, experience_years, clinic_address, phone_number
 `
 
 type CreateDoctorProfileParams struct {
+	Username        string `json:"username"`
 	Specialization  string `json:"specialization"`
 	ExperienceYears int32  `json:"experience_years"`
 	ClinicAddress   string `json:"clinic_address"`
@@ -31,6 +33,7 @@ type CreateDoctorProfileParams struct {
 
 func (q *Queries) CreateDoctorProfile(ctx context.Context, arg CreateDoctorProfileParams) (DoctorProfile, error) {
 	row := q.db.QueryRow(ctx, createDoctorProfile,
+		arg.Username,
 		arg.Specialization,
 		arg.ExperienceYears,
 		arg.ClinicAddress,

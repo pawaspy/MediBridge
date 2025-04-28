@@ -1,11 +1,12 @@
 -- name: CreateDoctorProfile :one
 INSERT INTO doctor_profiles(
+    username,
     specialization,
     experience_years,
     clinic_address,
     phone_number
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 ) RETURNING *;
 
 -- name: FindDoctorsByName :many

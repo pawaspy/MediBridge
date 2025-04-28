@@ -39,8 +39,8 @@ func (server *Server) setupRouter() {
 	router.POST("/api/createuser", server.createUser)
 	router.POST("/api/loginuser", server.loginUser)
 
-	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
-	authRoutes.PATCH("/api/updateuser", )
+	authRoutes := router.Group("/api").Use(authMiddleware(server.tokenMaker))
+	authRoutes.PATCH("/updateuser", server.updateUser)
 
 	server.router = router
 }
