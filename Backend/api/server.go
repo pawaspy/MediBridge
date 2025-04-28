@@ -42,6 +42,8 @@ func (server *Server) setupRouter() {
 	authRoutes := router.Group("/api").Use(authMiddleware(server.tokenMaker))
 	authRoutes.PATCH("/updateuser", server.updateUser)
 
+	authRoutes.POST("/createpatient", server.createPatientProfile)
+
 	server.router = router
 }
 

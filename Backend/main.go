@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pawaspy/MediBridge/api"
 	db "github.com/pawaspy/MediBridge/db/sqlc"
@@ -13,6 +15,9 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
+	fmt.Println("Server is running at port 3000")
+
 	config, err := util.LoadConfig(".")
 
 	if err != nil {
