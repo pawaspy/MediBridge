@@ -53,6 +53,30 @@ func (ns NullUserRole) Value() (driver.Value, error) {
 	return string(ns.UserRole), nil
 }
 
+type DoctorProfile struct {
+	Username        string `json:"username"`
+	Specialization  string `json:"specialization"`
+	ExperienceYears int32  `json:"experience_years"`
+	ClinicAddress   string `json:"clinic_address"`
+	PhoneNumber     string `json:"phone_number"`
+}
+
+type PatientProfile struct {
+	Username    string `json:"username"`
+	Age         int32  `json:"age"`
+	BloodGroup  string `json:"blood_group"`
+	Allergies   string `json:"allergies"`
+	PhoneNumber string `json:"phone_number"`
+}
+
+type SellerProfile struct {
+	Username      string `json:"username"`
+	ShopName      string `json:"shop_name"`
+	LicenseNumber string `json:"license_number"`
+	ShopAddress   string `json:"shop_address"`
+	PhoneNumber   string `json:"phone_number"`
+}
+
 type User struct {
 	Username          string    `json:"username"`
 	HashedPassword    string    `json:"hashed_password"`

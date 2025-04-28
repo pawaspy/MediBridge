@@ -9,8 +9,19 @@ import (
 )
 
 type Querier interface {
+	CreateDoctorProfile(ctx context.Context, arg CreateDoctorProfileParams) (DoctorProfile, error)
+	CreatePatientProfile(ctx context.Context, arg CreatePatientProfileParams) (PatientProfile, error)
+	CreateSellerProfile(ctx context.Context, arg CreateSellerProfileParams) (SellerProfile, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteUser(ctx context.Context, username string) error
+	FindDoctorsByName(ctx context.Context, arg FindDoctorsByNameParams) ([]FindDoctorsByNameRow, error)
+	GetPatientProfile(ctx context.Context, username string) (PatientProfile, error)
+	GetSellerProfile(ctx context.Context, shopName string) (SellerProfile, error)
 	GetUser(ctx context.Context, username string) (User, error)
+	ListDoctorsBySpecialization(ctx context.Context, specialization string) ([]DoctorProfile, error)
+	UpdateDoctorProfile(ctx context.Context, arg UpdateDoctorProfileParams) (DoctorProfile, error)
+	UpdatePatientProfile(ctx context.Context, arg UpdatePatientProfileParams) (PatientProfile, error)
+	UpdateSellerProfile(ctx context.Context, arg UpdateSellerProfileParams) (SellerProfile, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 
