@@ -13,12 +13,24 @@ migrateup:
 	migrate -path db/migration -database "$(DB_URL)" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "$(DB_URL)" -verbose 
-	
+	migrate -path db/migration -database "$(DB_URL)" -verbose down
+
+migrateup1:
+	migrate -path db/migration -database "$(DB_URL)" -verbose up 1
+
+migratedown1:
+	migrate -path db/migration -database "$(DB_URL)" -verbose down 1
+
 sqlc:
 	sqlc generate
 
 server:
 	go run main.go
 
-.PHONY: postgres createdb migration migrateup migratedown sqlc server
+db_docs:
+	dbdocs build docs/db.dbml
+
+db_schema:
+	dbml2sql --postgres -o docs/schema.sql docs/db.dbml
+
+.PHONY: postgres createdb migration migrateup migratedown sqlc server db_docs db_schema migratedown1 migrateup1
