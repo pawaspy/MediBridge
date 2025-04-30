@@ -43,6 +43,7 @@ func (server *Server) setupRouter() {
 	authRoutes.PATCH("/updateuser", server.updateUser)
 
 	authRoutes.POST("/createpatient", server.createPatientProfile)
+	authRoutes.GET("/getpatient", server.getPatient)
 
 	server.router = router
 }
