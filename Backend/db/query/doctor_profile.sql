@@ -11,12 +11,12 @@ INSERT INTO doctor_profiles(
 
 -- name: FindDoctorsByName :many
 SELECT 
-    d.*,
+    d.username, d.specialization, d.experience_years, d.clinic_address, d.phone_number,
     u.full_name,
     u.email
 FROM doctor_profiles d
 JOIN users u ON d.username = u.username
-WHERE u.full_name ILIKE '%' || $1 || '%'
+WHERE u.full_name = $1
 ORDER BY d.experience_years DESC
 LIMIT $2
 OFFSET $3;
@@ -25,6 +25,7 @@ OFFSET $3;
 SELECT d.* FROM doctor_profiles d
 WHERE d.specialization = $1
 ORDER BY d.experience_years DESC;
+
 
 -- name: UpdateDoctorProfile :one
 UPDATE doctor_profiles

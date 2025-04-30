@@ -9,9 +9,12 @@ INSERT INTO seller_profiles (
     $1, $2, $3, $4, $5
 ) RETURNING *;
 
--- name: GetSellerProfile :one
-SELECT * FROM seller_profiles
-WHERE shop_name = $1 LIMIT 1;
+-- name: SearchShops :many
+SELECT username, shop_name, license_number, shop_address, phone_number 
+FROM seller_profiles
+WHERE shop_name ILIKE '%' || sqlc.arg('keyword') || '%'
+ORDER BY shop_name
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: UpdateSellerProfile :one
 UPDATE seller_profiles

@@ -46,6 +46,16 @@ func (server *Server) setupRouter() {
 	authRoutes.PATCH("/updatepatient", server.updatePatientProfile)
 	authRoutes.DELETE("/deletepatient/:username", server.deletePatientProfile)
 
+	authRoutes.POST("/createdoctor", server.createDoctorProfile)
+	authRoutes.GET("/getdoctor/:specialization", server.listDoctorsBySpecialization)
+	authRoutes.PATCH("/updatedoctor", server.updateDoctorProfile)
+	authRoutes.DELETE("/deletedoctor/:username", server.deleteDoctorProfile)
+
+	authRoutes.POST("/createseller", server.createSellerProfile)
+	authRoutes.GET("/searchshops", server.searchShops)
+	authRoutes.PATCH("/updateseller", server.updateSellerProfile)
+	authRoutes.DELETE("/deleteseller/:username", server.deleteSellerProfile)
+
 	server.router = router
 }
 
