@@ -25,6 +25,7 @@ WHERE
     username = sqlc.arg(username)
 RETURNING *;
 
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 DELETE FROM users
-WHERE username = $1;
+WHERE username = $1
+RETURNING username;

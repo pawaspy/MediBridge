@@ -16,10 +16,10 @@ SELECT
     u.email
 FROM doctor_profiles d
 JOIN users u ON d.username = u.username
-WHERE u.full_name = $1
+WHERE u.full_name ILIKE '%' || sqlc.arg('name') || '%'
 ORDER BY d.experience_years DESC
-LIMIT $2
-OFFSET $3;
+LIMIT sqlc.arg('limit')
+OFFSET sqlc.arg('offset');
 
 -- name: ListDoctorsBySpecialization :many
 SELECT d.* FROM doctor_profiles d

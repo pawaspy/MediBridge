@@ -115,9 +115,9 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	rsp := loginUserResponse{
-		AccessToken: accessToken,
+		AccessToken:          accessToken,
 		AccessTokenExpiresAt: accessPayload.ExpiredAt,
-		User: newUserResponse(user),
+		User:                 newUserResponse(user),
 	}
 
 	ctx.JSON(http.StatusOK, rsp)
@@ -186,4 +186,39 @@ func (server *Server) updateUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, newUserResponse(user))
+}
+
+type deleteUserRequest struct {
+	Username string `uri:"username" binding:"required,alphanum"`
+}
+
+func (server *Server) deleteUser(ctx *gin.Context) {
+	var req deleteUserRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if authPayload.Username != req.Username {
+		err := errors.New("cannot delete other users' account")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	username, err := server.store.DeleteUser(ctx, req.Username)
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"username": username,
+		"message":  "user deleted successfully",
+	})
 }

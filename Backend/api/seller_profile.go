@@ -163,9 +163,9 @@ func (server *Server) deleteSellerProfile(ctx *gin.Context) {
 }
 
 type searchShopsRequest struct {
-	Keyword string `form:"keyword" binding:"required,alpha"`
-	Offset  int32  `form:"offset" binding:"min=0"`
-	Limit   int32  `form:"limit" binding:"required,min=1,max=50"`
+	Name   string `form:"name" binding:"required,alpha"`
+	Offset int32  `form:"offset,default=0"`
+	Limit  int32  `form:"limit,default=10"`
 }
 
 func (server *Server) searchShops(ctx *gin.Context) {
@@ -176,9 +176,9 @@ func (server *Server) searchShops(ctx *gin.Context) {
 	}
 
 	params := db.SearchShopsParams{
-		Keyword: pgtype.Text{String: req.Keyword, Valid: true},
-		Offset:  req.Offset,
-		Limit:   req.Limit,
+		Name:   pgtype.Text{String: req.Name, Valid: true},
+		Offset: req.Offset,
+		Limit:  req.Limit,
 	}
 
 	shops, err := server.store.SearchShops(ctx, params)

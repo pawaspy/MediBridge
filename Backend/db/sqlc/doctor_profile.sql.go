@@ -69,16 +69,16 @@ SELECT
     u.email
 FROM doctor_profiles d
 JOIN users u ON d.username = u.username
-WHERE u.full_name = $1
+WHERE u.full_name ILIKE '%' || $1 || '%'
 ORDER BY d.experience_years DESC
-LIMIT $2
-OFFSET $3
+LIMIT $3
+OFFSET $2
 `
 
 type FindDoctorsByNameParams struct {
-	FullName string `json:"full_name"`
-	Limit    int32  `json:"limit"`
-	Offset   int32  `json:"offset"`
+	Name   pgtype.Text `json:"name"`
+	Offset int32       `json:"offset"`
+	Limit  int32       `json:"limit"`
 }
 
 type FindDoctorsByNameRow struct {
@@ -92,7 +92,7 @@ type FindDoctorsByNameRow struct {
 }
 
 func (q *Queries) FindDoctorsByName(ctx context.Context, arg FindDoctorsByNameParams) ([]FindDoctorsByNameRow, error) {
-	rows, err := q.db.Query(ctx, findDoctorsByName, arg.FullName, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, findDoctorsByName, arg.Name, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

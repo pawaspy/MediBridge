@@ -12,7 +12,7 @@ INSERT INTO seller_profiles (
 -- name: SearchShops :many
 SELECT username, shop_name, license_number, shop_address, phone_number 
 FROM seller_profiles
-WHERE shop_name ILIKE '%' || sqlc.arg('keyword') || '%'
+WHERE shop_name ILIKE '%' || sqlc.arg('name') || '%'
 ORDER BY shop_name
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 

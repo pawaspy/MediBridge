@@ -186,3 +186,39 @@ func (server *Server) deleteDoctorProfile(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "doctor profile deleted successfully"})
 }
+
+type FindDoctorsByNameRequest struct {
+	FullName string `form:"full_name" binding:"required,alpha"`
+	Limit    int32  `form:"limit,default=10"`
+	Offset   int32  `form:"offset,default=0"`
+}
+
+func (server *Server) findDoctorsByName(ctx *gin.Context) {
+	var req FindDoctorsByNameRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	arg := db.FindDoctorsByNameParams{
+		Name: pgtype.Text{String: req.FullName, Valid: true},
+		Limit:    req.Limit,
+		Offset:   req.Offset,
+	}
+
+	doctors, err := server.store.FindDoctorsByName(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if len(doctors) == 0 {
+		ctx.JSON(http.StatusNotFound, errorResponse(errors.New("no doctors found with the given name")))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"doctors": doctors,
+		"count":   len(doctors),
+	})
+}

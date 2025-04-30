@@ -16,7 +16,7 @@ type Querier interface {
 	DeleteDoctorProfile(ctx context.Context, username string) (string, error)
 	DeletePatientProfile(ctx context.Context, username string) (string, error)
 	DeleteSellerProfile(ctx context.Context, username string) (string, error)
-	DeleteUser(ctx context.Context, username string) error
+	DeleteUser(ctx context.Context, username string) (string, error)
 	FindDoctorsByName(ctx context.Context, arg FindDoctorsByNameParams) ([]FindDoctorsByNameRow, error)
 	GetPatientProfile(ctx context.Context, username string) (PatientProfile, error)
 	GetUser(ctx context.Context, username string) (User, error)

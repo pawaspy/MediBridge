@@ -71,13 +71,13 @@ LIMIT $3 OFFSET $2
 `
 
 type SearchShopsParams struct {
-	Keyword pgtype.Text `json:"keyword"`
-	Offset  int32       `json:"offset"`
-	Limit   int32       `json:"limit"`
+	Name   pgtype.Text `json:"name"`
+	Offset int32       `json:"offset"`
+	Limit  int32       `json:"limit"`
 }
 
 func (q *Queries) SearchShops(ctx context.Context, arg SearchShopsParams) ([]SellerProfile, error) {
-	rows, err := q.db.Query(ctx, searchShops, arg.Keyword, arg.Offset, arg.Limit)
+	rows, err := q.db.Query(ctx, searchShops, arg.Name, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

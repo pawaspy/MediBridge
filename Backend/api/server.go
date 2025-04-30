@@ -39,7 +39,9 @@ func (server *Server) setupRouter() {
 
 	router.POST("/api/createuser", server.createUser)
 	router.POST("/api/loginuser", server.loginUser)
+	
 	authRoutes.PATCH("/updateuser", server.updateUser)
+	authRoutes.DELETE("/deleteuser/:username", server.deleteUser)
 
 	authRoutes.POST("/createpatient", server.createPatientProfile)
 	authRoutes.GET("/getpatient/:username", server.getPatient)
@@ -47,7 +49,8 @@ func (server *Server) setupRouter() {
 	authRoutes.DELETE("/deletepatient/:username", server.deletePatientProfile)
 
 	authRoutes.POST("/createdoctor", server.createDoctorProfile)
-	authRoutes.GET("/getdoctor/:specialization", server.listDoctorsBySpecialization)
+	authRoutes.GET("/getdoctors/:specialization", server.listDoctorsBySpecialization)
+	authRoutes.GET("/searchdoctors", server.findDoctorsByName)
 	authRoutes.PATCH("/updatedoctor", server.updateDoctorProfile)
 	authRoutes.DELETE("/deletedoctor/:username", server.deleteDoctorProfile)
 
