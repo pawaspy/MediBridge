@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/pawaspy/MediBridge/db/sqlc"
 	"github.com/pawaspy/MediBridge/token"
 	"github.com/pawaspy/MediBridge/util"
@@ -14,7 +15,7 @@ import (
 
 type CreatePatientProfile struct {
 	Username    string `json:"username" binding:"required,alphanum"`
-	Age         int64  `json:"age" binding:"required,gte=0"`
+	Age         int64  `json:"age" binding:"required"`
 	BloodGroup  string `json:"blood_group" binding:"required"`
 	Allergies   string `json:"allergies" binding:"required"`
 	PhoneNumber string `json:"phone_number" binding:"required"`
@@ -107,10 +108,66 @@ type UpdatePatientProfileRequest struct {
 	PhoneNumber *string `json:"phone_number" binding:"omitempty"`
 }
 
-// func (server *Server) updatePatientProfile(ctx *gin.Context) {
-// 	authPayload := server.authorizeUser(ctx, []string{util.Patient})
+func (server *Server) updatePatientProfile(ctx *gin.Context) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
-// }
+	var req UpdatePatientProfileRequest
+	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if authPayload.Role != util.Patient || authPayload.Username != *req.Username || *req.Username == "" {
+		err := errors.New("cannot update user for invalid username or role")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	arg := db.UpdatePatientProfileParams{
+		Username: authPayload.Username,
+	}
+
+	if req.Age != nil {
+		arg.Age = pgtype.Int4{
+			Int32: *req.Age,
+			Valid: true,
+		}
+	}
+
+	if req.BloodGroup != nil {
+		arg.BloodGroup = pgtype.Text{
+			String: *req.BloodGroup,
+			Valid:  true,
+		}
+	}
+
+	if req.Allergies != nil {
+		arg.Allergies = pgtype.Text{
+			String: *req.Allergies,
+			Valid:  true,
+		}
+	}
+
+	if req.PhoneNumber != nil {
+		if !isValidPhoneNumber(*req.PhoneNumber) {
+			err := errors.New("phone number must be exactly 10 digits")
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+		arg.PhoneNumber = pgtype.Text{
+			String: *req.PhoneNumber,
+			Valid: true,
+		}
+	}
+
+	user, err := server.store.UpdatePatientProfile(ctx, arg)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
+}
 
 func isValidPhoneNumber(phone string) bool {
 	matched, _ := regexp.MatchString(`^\d{10}$`, phone)
