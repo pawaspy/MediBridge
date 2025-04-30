@@ -50,6 +50,18 @@ func (q *Queries) CreateSellerProfile(ctx context.Context, arg CreateSellerProfi
 	return i, err
 }
 
+const deleteSellerProfile = `-- name: DeleteSellerProfile :one
+DELETE FROM seller_profiles
+WHERE username = $1
+RETURNING username
+`
+
+func (q *Queries) DeleteSellerProfile(ctx context.Context, username string) (string, error) {
+	row := q.db.QueryRow(ctx, deleteSellerProfile, username)
+	err := row.Scan(&username)
+	return username, err
+}
+
 const getSellerProfile = `-- name: GetSellerProfile :one
 SELECT username, shop_name, license_number, shop_address, phone_number FROM seller_profiles
 WHERE shop_name = $1 LIMIT 1

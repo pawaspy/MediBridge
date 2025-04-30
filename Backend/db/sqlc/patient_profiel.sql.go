@@ -50,6 +50,18 @@ func (q *Queries) CreatePatientProfile(ctx context.Context, arg CreatePatientPro
 	return i, err
 }
 
+const deletePatientProfile = `-- name: DeletePatientProfile :one
+DELETE FROM patient_profiles
+WHERE username = $1
+RETURNING username
+`
+
+func (q *Queries) DeletePatientProfile(ctx context.Context, username string) (string, error) {
+	row := q.db.QueryRow(ctx, deletePatientProfile, username)
+	err := row.Scan(&username)
+	return username, err
+}
+
 const getPatientProfile = `-- name: GetPatientProfile :one
 SELECT username, age, blood_group, allergies, phone_number FROM patient_profiles
 WHERE username = $1 LIMIT 1

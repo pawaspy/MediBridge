@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -67,18 +68,17 @@ func (server *Server) createPatientProfile(ctx *gin.Context) {
 }
 
 type GetPatientRequest struct {
-	Username string `json:"username" binding:"required,min=1"`
+	Username string `uri:"username" binding:"required,alphanum"`
 }
 
 func (server *Server) getPatient(ctx *gin.Context) {
-	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-
 	var req GetPatientRequest
-
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
 	patient, err := server.store.GetPatientProfile(ctx, req.Username)
 
@@ -91,8 +91,8 @@ func (server *Server) getPatient(ctx *gin.Context) {
 		return
 	}
 
-	if authPayload.Role == util.Seller || patient.Username != authPayload.Username {
-		err := errors.New("cannot provide user to invalid username or role")
+	if authPayload.Role == util.Seller || (authPayload.Role == util.Patient && patient.Username != authPayload.Username) {
+		err := errors.New("unauthorized access to patient profile")
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
@@ -156,7 +156,7 @@ func (server *Server) updatePatientProfile(ctx *gin.Context) {
 		}
 		arg.PhoneNumber = pgtype.Text{
 			String: *req.PhoneNumber,
-			Valid: true,
+			Valid:  true,
 		}
 	}
 
@@ -167,6 +167,39 @@ func (server *Server) updatePatientProfile(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+type DeletePatientProfileRequest struct {
+	Username string `uri:"username" binding:"required,alphanum"`
+}
+
+func (server *Server) deletePatientProfile(ctx *gin.Context) {
+	var req DeletePatientProfileRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if authPayload.Role != util.Patient || authPayload.Username != req.Username {
+		err := errors.New("unauthorized: patients can only delete their own profile")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	_, err := server.store.DeletePatientProfile(ctx, req.Username)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "patient profile deleted successfully"})
 }
 
 func isValidPhoneNumber(phone string) bool {

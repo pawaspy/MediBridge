@@ -23,3 +23,8 @@ SET
 WHERE
     username = sqlc.arg(username)
 RETURNING *;
+
+-- name: DeleteSellerProfile :one
+DELETE FROM seller_profiles
+WHERE username = $1
+RETURNING username;
