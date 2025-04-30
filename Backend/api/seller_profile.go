@@ -14,7 +14,7 @@ import (
 
 type CreateSellerProfile struct {
 	Username      string `json:"username" binding:"required,alphanum"`
-	ShopName      string `json:"shop_name" binding:"required,regexp=^[a-zA-Z\\s-]+$"`
+	ShopName      string `json:"shop_name" binding:"required"`
 	LicenseNumber string `json:"license_number" binding:"required"`
 	ShopAddress   string `json:"shop_address" binding:"required"`
 	PhoneNumber   string `json:"phone_number" binding:"required"`
@@ -60,7 +60,7 @@ func (server *Server) createSellerProfile(ctx *gin.Context) {
 
 type UpdateSellerProfileRequest struct {
 	Username      string  `json:"username" binding:"required"`
-	ShopName      *string `json:"shop_name" binding:"omitempty,regexp=^[a-zA-Z\\s-]+$"`
+	ShopName      *string `json:"shop_name" binding:"omitempty"`
 	LicenseNumber *string `json:"license_number" binding:"omitempty"`
 	ShopAddress   *string `json:"shop_address" binding:"omitempty"`
 	PhoneNumber   *string `json:"phone_number" binding:"omitempty"`
@@ -197,4 +197,3 @@ func (server *Server) searchShops(ctx *gin.Context) {
 		"count": len(shops),
 	})
 }
-
