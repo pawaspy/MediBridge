@@ -24,6 +24,18 @@ type Doctor struct {
 	CreatedAt          pgtype.Timestamp `json:"created_at"`
 }
 
+type Medicine struct {
+	ID             int32            `json:"id"`
+	Name           string           `json:"name"`
+	Description    string           `json:"description"`
+	ExpiryDate     pgtype.Date      `json:"expiry_date"`
+	Quantity       int32            `json:"quantity"`
+	Price          pgtype.Numeric   `json:"price"`
+	Discount       int32            `json:"discount"`
+	SellerUsername string           `json:"seller_username"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
 type Patient struct {
 	Username          string           `json:"username"`
 	FullName          string           `json:"full_name"`

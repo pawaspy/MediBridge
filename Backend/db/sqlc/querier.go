@@ -10,17 +10,23 @@ import (
 
 type Querier interface {
 	CreateDoctor(ctx context.Context, arg CreateDoctorParams) (Doctor, error)
+	CreateMedicine(ctx context.Context, arg CreateMedicineParams) (Medicine, error)
 	CreatePatient(ctx context.Context, arg CreatePatientParams) (Patient, error)
 	CreateSeller(ctx context.Context, arg CreateSellerParams) (Seller, error)
 	DeleteDoctor(ctx context.Context, username string) (string, error)
+	DeleteMedicine(ctx context.Context, id int32) error
 	DeletePatient(ctx context.Context, username string) (string, error)
 	DeleteSeller(ctx context.Context, username string) (string, error)
 	GetDoctorByName(ctx context.Context, username string) (Doctor, error)
 	GetPatientByName(ctx context.Context, username string) (Patient, error)
 	GetSellerByName(ctx context.Context, username string) (Seller, error)
 	ListDoctorsBySpecialization(ctx context.Context, arg ListDoctorsBySpecializationParams) ([]Doctor, error)
+	ListMedicines(ctx context.Context, arg ListMedicinesParams) ([]Medicine, error)
+	ListSellerMedicinesByExpiry(ctx context.Context, arg ListSellerMedicinesByExpiryParams) ([]Medicine, error)
 	ListSellersByStoreName(ctx context.Context, arg ListSellersByStoreNameParams) ([]Seller, error)
+	SearchMedicinesByNameSortedByPrice(ctx context.Context, arg SearchMedicinesByNameSortedByPriceParams) ([]Medicine, error)
 	UpdateDoctor(ctx context.Context, arg UpdateDoctorParams) (Doctor, error)
+	UpdateMedicine(ctx context.Context, arg UpdateMedicineParams) (Medicine, error)
 	UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error)
 	UpdateSeller(ctx context.Context, arg UpdateSellerParams) (Seller, error)
 }
