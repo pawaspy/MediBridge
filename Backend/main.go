@@ -2,51 +2,53 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"log"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pawaspy/MediBridge/api"
 	db "github.com/pawaspy/MediBridge/db/sqlc"
 	"github.com/pawaspy/MediBridge/util"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
-	fmt.Println("Server is running at port 3000")
-
+	// Load configuration
 	config, err := util.LoadConfig(".")
-
 	if err != nil {
-		log.Info().Msg("Cannot open the config file")
+		log.Fatalf("cannot load config: %v", err)
 	}
 
-	if config.Environment == "development" {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	}
-
+	// Connect to database
 	connPool, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
-		log.Info().Msg("Cannot connect to db")
+		log.Fatalf("cannot connect to database: %v", err)
 	}
+	defer connPool.Close()
 
+	// Create stores
 	store := db.NewStore(connPool)
 
-	runGinServer(config, store)
-}
+	// // Create email sender
+	// emailSender := mail.NewSMTPSender(mail.SMTPConfig{
+	// 	Host:     config.SMTPHost,
+	// 	Port:     config.SMTPPort,
+	// 	Username: config.SMTPUsername,
+	// 	Password: config.SMTPPassword,
+	// 	FromName: config.SenderName,
+	// 	FromAddr: config.SenderEmail,
+	// })
 
-func runGinServer(config util.Config, store db.Store) {
+	// // Create and start expiry notifier
+	// expiryNotifier := mail.NewExpiryNotifier(store, emailSender)
+	// go expiryNotifier.StartPeriodicChecks(config.ExpiryCheckPeriod)
+
+	// Start API server
 	server, err := api.NewServer(config, store)
-
 	if err != nil {
-		log.Info().Msg("cannot start the server")
+		log.Fatalf("cannot create server: %v", err)
 	}
 
 	err = server.Start(config.HTTPAddress)
 	if err != nil {
-		log.Info().Msg("Cannot start the server")
+		log.Fatalf("cannot start server: %v", err)
 	}
 }

@@ -5,85 +5,44 @@
 package db
 
 import (
-	"database/sql/driver"
-	"fmt"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type UserRole string
-
-const (
-	UserRoleDoctor  UserRole = "doctor"
-	UserRolePatient UserRole = "patient"
-	UserRoleSeller  UserRole = "seller"
-)
-
-func (e *UserRole) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = UserRole(s)
-	case string:
-		*e = UserRole(s)
-	default:
-		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
-	}
-	return nil
+type Doctor struct {
+	Username           string      `json:"username"`
+	FullName           string      `json:"full_name"`
+	MobileNumber       string      `json:"mobile_number"`
+	Gender             string      `json:"gender"`
+	Age                int32       `json:"age"`
+	Specialization     string      `json:"specialization"`
+	Email              string      `json:"email"`
+	Password           string      `json:"password"`
+	RegistrationNumber string      `json:"registration_number"`
+	HospitalName       pgtype.Text `json:"hospital_name"`
+	YearsExperience    int32       `json:"years_experience"`
 }
 
-type NullUserRole struct {
-	UserRole UserRole `json:"user_role"`
-	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
+type Patient struct {
+	Username         string `json:"username"`
+	FullName         string `json:"full_name"`
+	Email            string `json:"email"`
+	MobileNumber     string `json:"mobile_number"`
+	Password         string `json:"password"`
+	Gender           string `json:"gender"`
+	Age              int32  `json:"age"`
+	Address          string `json:"address"`
+	EmergencyContact string `json:"emergency_contact"`
 }
 
-// Scan implements the Scanner interface.
-func (ns *NullUserRole) Scan(value interface{}) error {
-	if value == nil {
-		ns.UserRole, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.UserRole.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullUserRole) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.UserRole), nil
-}
-
-type DoctorProfile struct {
-	Username        string `json:"username"`
-	Specialization  string `json:"specialization"`
-	ExperienceYears int32  `json:"experience_years"`
-	ClinicAddress   string `json:"clinic_address"`
-	PhoneNumber     string `json:"phone_number"`
-}
-
-type PatientProfile struct {
-	Username    string `json:"username"`
-	Age         int32  `json:"age"`
-	BloodGroup  string `json:"blood_group"`
-	Allergies   string `json:"allergies"`
-	PhoneNumber string `json:"phone_number"`
-}
-
-type SellerProfile struct {
-	Username      string `json:"username"`
-	ShopName      string `json:"shop_name"`
-	LicenseNumber string `json:"license_number"`
-	ShopAddress   string `json:"shop_address"`
-	PhoneNumber   string `json:"phone_number"`
-}
-
-type User struct {
-	Username          string    `json:"username"`
-	HashedPassword    string    `json:"hashed_password"`
-	FullName          string    `json:"full_name"`
-	Email             string    `json:"email"`
-	Role              UserRole  `json:"role"`
-	IsEmailVerified   bool      `json:"is_email_verified"`
-	PasswordChangedAt time.Time `json:"password_changed_at"`
-	CreatedAt         time.Time `json:"created_at"`
+type Seller struct {
+	Username          string `json:"username"`
+	FullName          string `json:"full_name"`
+	Email             string `json:"email"`
+	Password          string `json:"password"`
+	MobileNumber      string `json:"mobile_number"`
+	StoreName         string `json:"store_name"`
+	GstNumber         string `json:"gst_number"`
+	DrugLicenseNumber string `json:"drug_license_number"`
+	SellerType        string `json:"seller_type"`
+	StoreAddress      string `json:"store_address"`
 }

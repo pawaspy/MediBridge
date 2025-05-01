@@ -1,0 +1,1 @@
+DELETE IF EXISTS patients;

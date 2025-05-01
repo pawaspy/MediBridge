@@ -35,32 +35,21 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 
 func (server *Server) setupRouter() {
 	router := gin.Default()
+
 	authRoutes := router.Group("/api").Use(authMiddleware(server.tokenMaker))
-
-	router.POST("/api/createuser", server.createUser)
-	router.POST("/api/loginuser", server.loginUser)
+	// Patient
+	router.POST("/api/patients", server.CreatePatient)
+	router.GET("/api/patients/:id", server.GetPatient)
+	router.POST("/api/loginpatient", server.loginPatient)
+	authRoutes.PUT("/patients", server.UpdatePatient)
+	authRoutes.DELETE("/api/patients/:id", server.DeletePatient)
 	
-	authRoutes.PATCH("/updateuser", server.updateUser)
-	authRoutes.DELETE("/deleteuser/:username", server.deleteUser)
-
-	authRoutes.POST("/createpatient", server.createPatientProfile)
-	authRoutes.GET("/getpatient/:username", server.getPatient)
-	authRoutes.PATCH("/updatepatient", server.updatePatientProfile)
-	authRoutes.DELETE("/deletepatient/:username", server.deletePatientProfile)
-
-	authRoutes.POST("/createdoctor", server.createDoctorProfile)
-	authRoutes.GET("/getdoctors/:specialization", server.listDoctorsBySpecialization)
-	authRoutes.GET("/searchdoctors", server.findDoctorsByName)
-	authRoutes.PATCH("/updatedoctor", server.updateDoctorProfile)
-	authRoutes.DELETE("/deletedoctor/:username", server.deleteDoctorProfile)
-
-	authRoutes.POST("/createseller", server.createSellerProfile)
-	authRoutes.GET("/searchshops", server.searchShops)
-	authRoutes.PATCH("/updateseller", server.updateSellerProfile)
-	authRoutes.DELETE("/deleteseller/:username", server.deleteSellerProfile)
+	// Doctor
+	
 
 	server.router = router
 }
+
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)
