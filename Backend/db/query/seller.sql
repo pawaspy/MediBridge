@@ -28,7 +28,8 @@ UPDATE sellers SET
   gst_number = COALESCE(sqlc.narg(gst_number), gst_number),
   drug_license_number = COALESCE(sqlc.narg(drug_license_number), drug_license_number),
   seller_type = COALESCE(sqlc.narg(seller_type), seller_type),
-  store_address = COALESCE(sqlc.narg(store_address), store_address)
+  store_address = COALESCE(sqlc.narg(store_address), store_address),
+  password_changed_at = COALESCE(sqlc.narg(password_changed_at), password_changed_at)
 WHERE username = sqlc.arg(username)
 RETURNING *;
 

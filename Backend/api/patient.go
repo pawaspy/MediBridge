@@ -35,26 +35,30 @@ type UpdatePatientRequest struct {
 }
 
 type userResponse struct {
-	Username         string `json:"username"`
-	FullName         string `json:"full_name"`
-	Email            string `json:"email"`
-	MobileNumber     string `json:"mobile_number"`
-	Gender           string `json:"gender"`
-	Age              int32  `json:"age"`
-	Address          string `json:"address"`
-	EmergencyContact string `json:"emergency_contact"`
+	Username          string           `json:"username"`
+	FullName          string           `json:"full_name"`
+	Email             string           `json:"email"`
+	MobileNumber      string           `json:"mobile_number"`
+	Gender            string           `json:"gender"`
+	Age               int32            `json:"age"`
+	Address           string           `json:"address"`
+	EmergencyContact  string           `json:"emergency_contact"`
+	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
 }
 
 func newUserResponse(user db.Patient) userResponse {
 	return userResponse{
-		Username:         user.Username,
-		FullName:         user.FullName,
-		Email:            user.Email,
-		MobileNumber:     user.MobileNumber,
-		Gender:           user.Gender,
-		Age:              user.Age,
-		Address:          user.Address,
-		EmergencyContact: user.EmergencyContact,
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		MobileNumber:      user.MobileNumber,
+		Gender:            user.Gender,
+		Age:               user.Age,
+		Address:           user.Address,
+		EmergencyContact:  user.EmergencyContact,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
 	}
 }
 
@@ -118,6 +122,7 @@ func (server *Server) CreatePatient(c *gin.Context) {
 		Username:         req.Username,
 		FullName:         req.FullName,
 		MobileNumber:     req.MobileNumber,
+		Gender:           req.Gender,
 		Age:              req.Age,
 		Email:            req.Email,
 		Password:         hashPass,
@@ -214,6 +219,10 @@ func (server *Server) UpdatePatient(c *gin.Context) {
 		arg.Password = pgtype.Text{
 			String: hashPass,
 			Valid:  true,
+		}
+		arg.PasswordChangedAt = pgtype.Timestamp{
+			Time:  time.Now(),
+			Valid: true,
 		}
 	}
 

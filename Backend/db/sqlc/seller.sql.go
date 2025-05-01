@@ -20,7 +20,7 @@ INSERT INTO sellers (
   $1, $2, $3, $4, $5,
   $6, $7, $8,
   $9, $10
-) RETURNING username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address
+) RETURNING username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address, password_changed_at, created_at
 `
 
 type CreateSellerParams struct {
@@ -61,6 +61,8 @@ func (q *Queries) CreateSeller(ctx context.Context, arg CreateSellerParams) (Sel
 		&i.DrugLicenseNumber,
 		&i.SellerType,
 		&i.StoreAddress,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -77,7 +79,7 @@ func (q *Queries) DeleteSeller(ctx context.Context, username string) (string, er
 }
 
 const getSellerByName = `-- name: GetSellerByName :one
-SELECT username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address FROM sellers WHERE username = $1
+SELECT username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address, password_changed_at, created_at FROM sellers WHERE username = $1
 `
 
 func (q *Queries) GetSellerByName(ctx context.Context, username string) (Seller, error) {
@@ -94,12 +96,14 @@ func (q *Queries) GetSellerByName(ctx context.Context, username string) (Seller,
 		&i.DrugLicenseNumber,
 		&i.SellerType,
 		&i.StoreAddress,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listSellersByStoreName = `-- name: ListSellersByStoreName :many
-SELECT username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address FROM sellers
+SELECT username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address, password_changed_at, created_at FROM sellers
 WHERE store_name ILIKE '%' || $1 || '%'
 ORDER BY store_name
 LIMIT $3 OFFSET $2
@@ -131,6 +135,8 @@ func (q *Queries) ListSellersByStoreName(ctx context.Context, arg ListSellersByS
 			&i.DrugLicenseNumber,
 			&i.SellerType,
 			&i.StoreAddress,
+			&i.PasswordChangedAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -152,22 +158,24 @@ UPDATE sellers SET
   gst_number = COALESCE($6, gst_number),
   drug_license_number = COALESCE($7, drug_license_number),
   seller_type = COALESCE($8, seller_type),
-  store_address = COALESCE($9, store_address)
-WHERE username = $10
-RETURNING username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address
+  store_address = COALESCE($9, store_address),
+  password_changed_at = COALESCE($10, password_changed_at)
+WHERE username = $11
+RETURNING username, full_name, email, password, mobile_number, store_name, gst_number, drug_license_number, seller_type, store_address, password_changed_at, created_at
 `
 
 type UpdateSellerParams struct {
-	FullName          pgtype.Text `json:"full_name"`
-	Email             pgtype.Text `json:"email"`
-	Password          pgtype.Text `json:"password"`
-	MobileNumber      pgtype.Text `json:"mobile_number"`
-	StoreName         pgtype.Text `json:"store_name"`
-	GstNumber         pgtype.Text `json:"gst_number"`
-	DrugLicenseNumber pgtype.Text `json:"drug_license_number"`
-	SellerType        pgtype.Text `json:"seller_type"`
-	StoreAddress      pgtype.Text `json:"store_address"`
-	Username          string      `json:"username"`
+	FullName          pgtype.Text      `json:"full_name"`
+	Email             pgtype.Text      `json:"email"`
+	Password          pgtype.Text      `json:"password"`
+	MobileNumber      pgtype.Text      `json:"mobile_number"`
+	StoreName         pgtype.Text      `json:"store_name"`
+	GstNumber         pgtype.Text      `json:"gst_number"`
+	DrugLicenseNumber pgtype.Text      `json:"drug_license_number"`
+	SellerType        pgtype.Text      `json:"seller_type"`
+	StoreAddress      pgtype.Text      `json:"store_address"`
+	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
+	Username          string           `json:"username"`
 }
 
 func (q *Queries) UpdateSeller(ctx context.Context, arg UpdateSellerParams) (Seller, error) {
@@ -181,6 +189,7 @@ func (q *Queries) UpdateSeller(ctx context.Context, arg UpdateSellerParams) (Sel
 		arg.DrugLicenseNumber,
 		arg.SellerType,
 		arg.StoreAddress,
+		arg.PasswordChangedAt,
 		arg.Username,
 	)
 	var i Seller
@@ -195,6 +204,8 @@ func (q *Queries) UpdateSeller(ctx context.Context, arg UpdateSellerParams) (Sel
 		&i.DrugLicenseNumber,
 		&i.SellerType,
 		&i.StoreAddress,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

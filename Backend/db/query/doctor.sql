@@ -29,7 +29,8 @@ UPDATE doctors SET
   password = COALESCE(sqlc.narg(password), password),
   registration_number = COALESCE(sqlc.narg(registration_number), registration_number),
   hospital_name = COALESCE(sqlc.narg(hospital_name), hospital_name),
-  years_experience = COALESCE(sqlc.narg(years_experience), years_experience)
+  years_experience = COALESCE(sqlc.narg(years_experience), years_experience),
+  password_changed_at = COALESCE(sqlc.narg(password_changed_at), password_changed_at)
 WHERE username = sqlc.arg(username)
 RETURNING *;
 

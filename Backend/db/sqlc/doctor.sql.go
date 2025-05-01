@@ -20,7 +20,7 @@ INSERT INTO doctors (
   $1, $2, $3, $4, $5,
   $6, $7, $8,
   $9, $10, $11
-) RETURNING username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience
+) RETURNING username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience, password_changed_at, created_at
 `
 
 type CreateDoctorParams struct {
@@ -64,6 +64,8 @@ func (q *Queries) CreateDoctor(ctx context.Context, arg CreateDoctorParams) (Doc
 		&i.RegistrationNumber,
 		&i.HospitalName,
 		&i.YearsExperience,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -80,7 +82,7 @@ func (q *Queries) DeleteDoctor(ctx context.Context, username string) (string, er
 }
 
 const getDoctorByName = `-- name: GetDoctorByName :one
-SELECT username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience FROM doctors WHERE username = $1
+SELECT username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience, password_changed_at, created_at FROM doctors WHERE username = $1
 `
 
 func (q *Queries) GetDoctorByName(ctx context.Context, username string) (Doctor, error) {
@@ -98,12 +100,14 @@ func (q *Queries) GetDoctorByName(ctx context.Context, username string) (Doctor,
 		&i.RegistrationNumber,
 		&i.HospitalName,
 		&i.YearsExperience,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listDoctorsBySpecialization = `-- name: ListDoctorsBySpecialization :many
-SELECT username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience FROM doctors
+SELECT username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience, password_changed_at, created_at FROM doctors
 WHERE specialization = $1
 ORDER BY years_experience DESC
 LIMIT $2 OFFSET $3
@@ -136,6 +140,8 @@ func (q *Queries) ListDoctorsBySpecialization(ctx context.Context, arg ListDocto
 			&i.RegistrationNumber,
 			&i.HospitalName,
 			&i.YearsExperience,
+			&i.PasswordChangedAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -158,23 +164,25 @@ UPDATE doctors SET
   password = COALESCE($7, password),
   registration_number = COALESCE($8, registration_number),
   hospital_name = COALESCE($9, hospital_name),
-  years_experience = COALESCE($10, years_experience)
-WHERE username = $11
-RETURNING username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience
+  years_experience = COALESCE($10, years_experience),
+  password_changed_at = COALESCE($11, password_changed_at)
+WHERE username = $12
+RETURNING username, full_name, mobile_number, gender, age, specialization, email, password, registration_number, hospital_name, years_experience, password_changed_at, created_at
 `
 
 type UpdateDoctorParams struct {
-	FullName           pgtype.Text `json:"full_name"`
-	MobileNumber       pgtype.Text `json:"mobile_number"`
-	Gender             pgtype.Text `json:"gender"`
-	Age                pgtype.Int4 `json:"age"`
-	Specialization     pgtype.Text `json:"specialization"`
-	Email              pgtype.Text `json:"email"`
-	Password           pgtype.Text `json:"password"`
-	RegistrationNumber pgtype.Text `json:"registration_number"`
-	HospitalName       pgtype.Text `json:"hospital_name"`
-	YearsExperience    pgtype.Int4 `json:"years_experience"`
-	Username           string      `json:"username"`
+	FullName           pgtype.Text      `json:"full_name"`
+	MobileNumber       pgtype.Text      `json:"mobile_number"`
+	Gender             pgtype.Text      `json:"gender"`
+	Age                pgtype.Int4      `json:"age"`
+	Specialization     pgtype.Text      `json:"specialization"`
+	Email              pgtype.Text      `json:"email"`
+	Password           pgtype.Text      `json:"password"`
+	RegistrationNumber pgtype.Text      `json:"registration_number"`
+	HospitalName       pgtype.Text      `json:"hospital_name"`
+	YearsExperience    pgtype.Int4      `json:"years_experience"`
+	PasswordChangedAt  pgtype.Timestamp `json:"password_changed_at"`
+	Username           string           `json:"username"`
 }
 
 func (q *Queries) UpdateDoctor(ctx context.Context, arg UpdateDoctorParams) (Doctor, error) {
@@ -189,6 +197,7 @@ func (q *Queries) UpdateDoctor(ctx context.Context, arg UpdateDoctorParams) (Doc
 		arg.RegistrationNumber,
 		arg.HospitalName,
 		arg.YearsExperience,
+		arg.PasswordChangedAt,
 		arg.Username,
 	)
 	var i Doctor
@@ -204,6 +213,8 @@ func (q *Queries) UpdateDoctor(ctx context.Context, arg UpdateDoctorParams) (Doc
 		&i.RegistrationNumber,
 		&i.HospitalName,
 		&i.YearsExperience,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

@@ -18,7 +18,7 @@ INSERT INTO patients (
 ) VALUES (
   $1, $2, $3, $4,
   $5, $6, $7, $8, $9
-) RETURNING username, full_name, email, mobile_number, password, gender, age, address, emergency_contact
+) RETURNING username, full_name, email, mobile_number, password, gender, age, address, emergency_contact, password_changed_at, created_at
 `
 
 type CreatePatientParams struct {
@@ -56,6 +56,8 @@ func (q *Queries) CreatePatient(ctx context.Context, arg CreatePatientParams) (P
 		&i.Age,
 		&i.Address,
 		&i.EmergencyContact,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -72,7 +74,7 @@ func (q *Queries) DeletePatient(ctx context.Context, username string) (string, e
 }
 
 const getPatientByName = `-- name: GetPatientByName :one
-SELECT username, full_name, email, mobile_number, password, gender, age, address, emergency_contact FROM patients WHERE username = $1
+SELECT username, full_name, email, mobile_number, password, gender, age, address, emergency_contact, password_changed_at, created_at FROM patients WHERE username = $1
 `
 
 func (q *Queries) GetPatientByName(ctx context.Context, username string) (Patient, error) {
@@ -88,6 +90,8 @@ func (q *Queries) GetPatientByName(ctx context.Context, username string) (Patien
 		&i.Age,
 		&i.Address,
 		&i.EmergencyContact,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -99,19 +103,21 @@ UPDATE patients SET
   age = COALESCE($3, age),
   password = COALESCE($4, password),
   address = COALESCE($5, address),
-  emergency_contact = COALESCE($6, emergency_contact)
-WHERE username = $7
-RETURNING username, full_name, email, mobile_number, password, gender, age, address, emergency_contact
+  emergency_contact = COALESCE($6, emergency_contact),
+  password_changed_at = COALESCE($7, password_changed_at)
+WHERE username = $8
+RETURNING username, full_name, email, mobile_number, password, gender, age, address, emergency_contact, password_changed_at, created_at
 `
 
 type UpdatePatientParams struct {
-	FullName         pgtype.Text `json:"full_name"`
-	MobileNumber     pgtype.Text `json:"mobile_number"`
-	Age              pgtype.Int4 `json:"age"`
-	Password         pgtype.Text `json:"password"`
-	Address          pgtype.Text `json:"address"`
-	EmergencyContact pgtype.Text `json:"emergency_contact"`
-	Username         string      `json:"username"`
+	FullName          pgtype.Text      `json:"full_name"`
+	MobileNumber      pgtype.Text      `json:"mobile_number"`
+	Age               pgtype.Int4      `json:"age"`
+	Password          pgtype.Text      `json:"password"`
+	Address           pgtype.Text      `json:"address"`
+	EmergencyContact  pgtype.Text      `json:"emergency_contact"`
+	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
+	Username          string           `json:"username"`
 }
 
 func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (Patient, error) {
@@ -122,6 +128,7 @@ func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (P
 		arg.Password,
 		arg.Address,
 		arg.EmergencyContact,
+		arg.PasswordChangedAt,
 		arg.Username,
 	)
 	var i Patient
@@ -135,6 +142,8 @@ func (q *Queries) UpdatePatient(ctx context.Context, arg UpdatePatientParams) (P
 		&i.Age,
 		&i.Address,
 		&i.EmergencyContact,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

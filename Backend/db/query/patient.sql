@@ -17,7 +17,8 @@ UPDATE patients SET
   age = COALESCE(sqlc.narg(age), age),
   password = COALESCE(sqlc.narg(password), password),
   address = COALESCE(sqlc.narg(address), address),
-  emergency_contact = COALESCE(sqlc.narg(emergency_contact), emergency_contact)
+  emergency_contact = COALESCE(sqlc.narg(emergency_contact), emergency_contact),
+  password_changed_at = COALESCE(sqlc.narg(password_changed_at), password_changed_at)
 WHERE username = sqlc.arg(username)
 RETURNING *;
 

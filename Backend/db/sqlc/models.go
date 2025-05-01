@@ -9,40 +9,46 @@ import (
 )
 
 type Doctor struct {
-	Username           string      `json:"username"`
-	FullName           string      `json:"full_name"`
-	MobileNumber       string      `json:"mobile_number"`
-	Gender             string      `json:"gender"`
-	Age                int32       `json:"age"`
-	Specialization     string      `json:"specialization"`
-	Email              string      `json:"email"`
-	Password           string      `json:"password"`
-	RegistrationNumber string      `json:"registration_number"`
-	HospitalName       pgtype.Text `json:"hospital_name"`
-	YearsExperience    int32       `json:"years_experience"`
+	Username           string           `json:"username"`
+	FullName           string           `json:"full_name"`
+	MobileNumber       string           `json:"mobile_number"`
+	Gender             string           `json:"gender"`
+	Age                int32            `json:"age"`
+	Specialization     string           `json:"specialization"`
+	Email              string           `json:"email"`
+	Password           string           `json:"password"`
+	RegistrationNumber string           `json:"registration_number"`
+	HospitalName       pgtype.Text      `json:"hospital_name"`
+	YearsExperience    int32            `json:"years_experience"`
+	PasswordChangedAt  pgtype.Timestamp `json:"password_changed_at"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
 }
 
 type Patient struct {
-	Username         string `json:"username"`
-	FullName         string `json:"full_name"`
-	Email            string `json:"email"`
-	MobileNumber     string `json:"mobile_number"`
-	Password         string `json:"password"`
-	Gender           string `json:"gender"`
-	Age              int32  `json:"age"`
-	Address          string `json:"address"`
-	EmergencyContact string `json:"emergency_contact"`
+	Username          string           `json:"username"`
+	FullName          string           `json:"full_name"`
+	Email             string           `json:"email"`
+	MobileNumber      string           `json:"mobile_number"`
+	Password          string           `json:"password"`
+	Gender            string           `json:"gender"`
+	Age               int32            `json:"age"`
+	Address           string           `json:"address"`
+	EmergencyContact  string           `json:"emergency_contact"`
+	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
 }
 
 type Seller struct {
-	Username          string `json:"username"`
-	FullName          string `json:"full_name"`
-	Email             string `json:"email"`
-	Password          string `json:"password"`
-	MobileNumber      string `json:"mobile_number"`
-	StoreName         string `json:"store_name"`
-	GstNumber         string `json:"gst_number"`
-	DrugLicenseNumber string `json:"drug_license_number"`
-	SellerType        string `json:"seller_type"`
-	StoreAddress      string `json:"store_address"`
+	Username          string           `json:"username"`
+	FullName          string           `json:"full_name"`
+	Email             string           `json:"email"`
+	Password          string           `json:"password"`
+	MobileNumber      string           `json:"mobile_number"`
+	StoreName         string           `json:"store_name"`
+	GstNumber         string           `json:"gst_number"`
+	DrugLicenseNumber string           `json:"drug_license_number"`
+	SellerType        string           `json:"seller_type"`
+	StoreAddress      string           `json:"store_address"`
+	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
 }
