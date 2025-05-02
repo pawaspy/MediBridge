@@ -55,26 +55,66 @@ func (q *Queries) CreateMedicine(ctx context.Context, arg CreateMedicineParams) 
 	return i, err
 }
 
-const deleteMedicine = `-- name: DeleteMedicine :exec
+const deleteMedicine = `-- name: DeleteMedicine :one
 DELETE FROM medicines WHERE id = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteMedicine(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteMedicine, id)
-	return err
+func (q *Queries) DeleteMedicine(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, deleteMedicine, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
-const listMedicines = `-- name: ListMedicines :many
-SELECT id, name, description, expiry_date, quantity, price, discount, seller_username, created_at FROM medicines ORDER BY id LIMIT $1 OFFSET $2
+const getMedicine = `-- name: GetMedicine :one
+SELECT id, name, description, expiry_date, quantity, price, discount, seller_username, created_at FROM medicines WHERE id = $1
 `
 
-type ListMedicinesParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+func (q *Queries) GetMedicine(ctx context.Context, id int32) (Medicine, error) {
+	row := q.db.QueryRow(ctx, getMedicine, id)
+	var i Medicine
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ExpiryDate,
+		&i.Quantity,
+		&i.Price,
+		&i.Discount,
+		&i.SellerUsername,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
-func (q *Queries) ListMedicines(ctx context.Context, arg ListMedicinesParams) ([]Medicine, error) {
-	rows, err := q.db.Query(ctx, listMedicines, arg.Limit, arg.Offset)
+const getMedicineByName = `-- name: GetMedicineByName :one
+SELECT id, name, description, expiry_date, quantity, price, discount, seller_username, created_at FROM medicines WHERE name = $1
+`
+
+func (q *Queries) GetMedicineByName(ctx context.Context, name string) (Medicine, error) {
+	row := q.db.QueryRow(ctx, getMedicineByName, name)
+	var i Medicine
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ExpiryDate,
+		&i.Quantity,
+		&i.Price,
+		&i.Discount,
+		&i.SellerUsername,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listAllMedicines = `-- name: ListAllMedicines :many
+SELECT id, name, description, expiry_date, quantity, price, discount, seller_username, created_at FROM medicines
+ORDER BY id ASC
+`
+
+func (q *Queries) ListAllMedicines(ctx context.Context) ([]Medicine, error) {
+	rows, err := q.db.Query(ctx, listAllMedicines)
 	if err != nil {
 		return nil, err
 	}
@@ -202,12 +242,12 @@ RETURNING id, name, description, expiry_date, quantity, price, discount, seller_
 `
 
 type UpdateMedicineParams struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
+	Name        pgtype.Text    `json:"name"`
+	Description pgtype.Text    `json:"description"`
 	ExpiryDate  pgtype.Date    `json:"expiry_date"`
-	Quantity    int32          `json:"quantity"`
+	Quantity    pgtype.Int4    `json:"quantity"`
 	Price       pgtype.Numeric `json:"price"`
-	Discount    int32          `json:"discount"`
+	Discount    pgtype.Int4    `json:"discount"`
 	ID          int32          `json:"id"`
 }
 

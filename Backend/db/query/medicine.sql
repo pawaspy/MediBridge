@@ -6,9 +6,6 @@ INSERT INTO medicines (
 )
 RETURNING *;
 
--- name: ListMedicines :many
-SELECT * FROM medicines ORDER BY id LIMIT $1 OFFSET $2;
-
 -- name: ListSellerMedicinesByExpiry :many
 SELECT * FROM medicines
 WHERE seller_username = $1
@@ -23,14 +20,25 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: UpdateMedicine :one
 UPDATE medicines SET
-    name = COALESCE($1, name),
-    description = COALESCE($2, description),
-    expiry_date = COALESCE($3, expiry_date),
-    quantity = COALESCE($4, quantity),
-    price = COALESCE($5, price),
-    discount = COALESCE($6, discount)
-WHERE id = $7
+    name = COALESCE(sqlc.narg(name), name),
+    description = COALESCE(sqlc.narg(description), description),
+    expiry_date = COALESCE(sqlc.narg(expiry_date), expiry_date),
+    quantity = COALESCE(sqlc.narg(quantity), quantity),
+    price = COALESCE(sqlc.narg(price), price),
+    discount = COALESCE(sqlc.narg(discount), discount)
+WHERE id = sqlc.arg(id)
 RETURNING *;
 
--- name: DeleteMedicine :exec
-DELETE FROM medicines WHERE id = $1;
+-- name: DeleteMedicine :one
+DELETE FROM medicines WHERE id = $1
+RETURNING id;
+
+-- name: GetMedicineByName :one
+SELECT * FROM medicines WHERE name = $1;
+
+-- name: GetMedicine :one
+SELECT * FROM medicines WHERE id = $1;
+
+-- name: ListAllMedicines :many
+SELECT * FROM medicines
+ORDER BY id ASC;

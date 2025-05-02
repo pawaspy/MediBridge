@@ -1,19 +1,24 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/pawaspy/MediBridge/db/sqlc"
+	"github.com/pawaspy/MediBridge/mail"
 	"github.com/pawaspy/MediBridge/token"
 	"github.com/pawaspy/MediBridge/util"
 )
 
 type Server struct {
-	config     util.Config
-	store      db.Store
-	router     *gin.Engine
-	tokenMaker token.Maker
+	config        util.Config
+	store         db.Store
+	router        *gin.Engine
+	tokenMaker    token.Maker
+	mailer        *mail.Mailer
+	expiryChecker *mail.ExpiryChecker
 }
 
 func NewServer(config util.Config, store db.Store) (*Server, error) {
@@ -22,10 +27,21 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 		return nil, fmt.Errorf("cannot create token: %w", err)
 	}
 
+	// Initialize the mailer
+	mailer, err := mail.NewMailer(config)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create mailer: %w", err)
+	}
+
+	// Initialize the expiry checker
+	expiryChecker := mail.NewExpiryChecker(store, mailer, config)
+
 	server := &Server{
-		config:     config,
-		store:      store,
-		tokenMaker: tokenMaker,
+		config:        config,
+		store:         store,
+		tokenMaker:    tokenMaker,
+		mailer:        mailer,
+		expiryChecker: expiryChecker,
 	}
 
 	server.setupRouter()
@@ -43,7 +59,7 @@ func (server *Server) setupRouter() {
 	router.POST("/api/loginpatient", server.loginPatient)
 	authRoutes.PUT("/patients", server.UpdatePatient)
 	authRoutes.DELETE("/patients/:username", server.DeletePatient)
-	
+
 	// Doctor
 	router.POST("/api/doctors", server.CreateDoctor)
 	router.GET("/api/doctors/:username", server.GetDoctor)
@@ -58,13 +74,14 @@ func (server *Server) setupRouter() {
 	authRoutes.PUT("/sellers", server.UpdateSeller)
 	authRoutes.DELETE("/sellers/:username", server.DeleteSeller)
 
-	// // Medicine
-	// router.POST("/api/medicines", server.CreateMedicine)
-	// router.GET("/api/medicines/:id", server.GetMedicine)
-	// router.GET("/api/medicines", server.ListMedicines)
-	// authRoutes.PUT("/medicines", server.UpdateMedicine)
-	// authRoutes.DELETE("/medicines/:id", server.DeleteMedicine)
-	
+	// Medicine
+	router.GET("/api/medicines/:id", server.GetMedicine)
+	router.GET("/api/medicines/search", server.SearchMedicinesByNameSortedByPrice)
+	router.GET("/api/sellers/:username/medicines", server.ListSellerMedicinesByExpiry)
+	authRoutes.POST("/medicines", server.CreateMedicine)
+	authRoutes.PUT("/medicines", server.UpdateMedicine)
+	authRoutes.DELETE("/medicines/:id", server.DeleteMedicine)
+
 	// // Order
 	// router.POST("/api/orders", server.CreateOrder)
 	// router.GET("/api/orders/:id", server.GetOrder)
@@ -102,8 +119,12 @@ func (server *Server) setupRouter() {
 	server.router = router
 }
 
-
 func (server *Server) Start(address string) error {
+	// Start the medicine expiry checker in a background goroutine
+	ctx := context.Background()
+	server.expiryChecker.StartExpiryCheckScheduler(ctx)
+	log.Printf("Medicine expiry checker scheduled to run every %v", server.config.ExpiryCheckPeriod)
+
 	return server.router.Run(address)
 }
 
