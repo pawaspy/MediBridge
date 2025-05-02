@@ -5,8 +5,20 @@
 package db
 
 import (
+	"time"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Cart struct {
+	ID              int32          `json:"id"`
+	PatientUsername string         `json:"patient_username"`
+	MedicineID      int32          `json:"medicine_id"`
+	Quantity        int32          `json:"quantity"`
+	TotalPrice      pgtype.Numeric `json:"total_price"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+}
 
 type Doctor struct {
 	Username           string           `json:"username"`
@@ -48,6 +60,45 @@ type Patient struct {
 	EmergencyContact  string           `json:"emergency_contact"`
 	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
 	CreatedAt         pgtype.Timestamp `json:"created_at"`
+}
+
+type PatientProfile struct {
+	ID                 int32            `json:"id"`
+	Username           string           `json:"username"`
+	DiseaseAllergies   pgtype.Text      `json:"disease_allergies"`
+	BloodGroup         pgtype.Text      `json:"blood_group"`
+	PrescribedMedicine pgtype.Text      `json:"prescribed_medicine"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+}
+
+type Payment struct {
+	ID              int32              `json:"id"`
+	OrderID         pgtype.Int4        `json:"order_id"`
+	UserID          string             `json:"user_id"`
+	Amount          pgtype.Numeric     `json:"amount"`
+	Currency        string             `json:"currency"`
+	Status          string             `json:"status"`
+	PaymentMethod   string             `json:"payment_method"`
+	PaymentIntentID pgtype.Text        `json:"payment_intent_id"`
+	ChargeID        pgtype.Text        `json:"charge_id"`
+	ErrorMessage    pgtype.Text        `json:"error_message"`
+	Metadata        []byte             `json:"metadata"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type PaymentMethod struct {
+	ID              int32              `json:"id"`
+	UserID          string             `json:"user_id"`
+	PaymentMethodID string             `json:"payment_method_id"`
+	Type            string             `json:"type"`
+	CardLast4       pgtype.Text        `json:"card_last4"`
+	CardBrand       pgtype.Text        `json:"card_brand"`
+	CardExpMonth    pgtype.Int4        `json:"card_exp_month"`
+	CardExpYear     pgtype.Int4        `json:"card_exp_year"`
+	IsDefault       pgtype.Bool        `json:"is_default"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Seller struct {
