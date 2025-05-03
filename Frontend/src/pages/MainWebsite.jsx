@@ -85,10 +85,13 @@ const MainNavbar = ({ username, handleSignOut }) => {
             <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1a1a]/80 backdrop-blur-md border border-[#00D37F]/20 rounded-xl shadow-xl shadow-[#00D37F]/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="py-3 space-y-1">
                 <a 
-                  href="#"
-                  className="block px-6 py-3 text-center text-[#7B68EE] no-underline"
+                  href="#" 
+                  className="block px-6 py-3 text-center text-[#7B68EE] no-underline" 
                   style={{ textDecoration: 'none' }}
-                  onClick={e => { e.preventDefault(); navigate('/profile'); }}
+                  onClick={e => { 
+                    e.preventDefault(); 
+                    navigate('/profile'); 
+                  }}
                 >
                   Your Profile
                 </a>
@@ -98,13 +101,6 @@ const MainNavbar = ({ username, handleSignOut }) => {
                   style={{ textDecoration: 'none' }}
                 >
                   Orders
-                </a>
-                <a 
-                  href="#" 
-                  className="block px-6 py-3 text-center text-[#00D37F] no-underline"
-                  style={{ textDecoration: 'none' }}
-                >
-                  Settings
                 </a>
                 <hr className="border-[#00D37F]/10 mx-6 my-2" />
                 <a 
@@ -458,14 +454,16 @@ const Footer = () => (
 const MainWebsite = () => {
   console.log('MainWebsite rendered');
   const [username, setUsername] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
-      const { username } = JSON.parse(userData);
-      setUsername(username);
+      const parsedData = JSON.parse(userData);
+      setUsername(parsedData.username);
+      // No redirection based on role - all users should stay on the main page
     }
-  }, []);
+  }, [navigate]);
 
   const handleSignOut = async () => {
     localStorage.removeItem('userData');

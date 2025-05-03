@@ -11,6 +11,7 @@ import Cart from './pages/Cart'
 import Healia from './pages/Healia'
 import UserProfile from './pages/UserProfile'
 import PatientProfile from './pages/PatientProfile'
+import SellerDashboard from './pages/SellerDashboard'
 
 // Check authentication for protected routes
 const ProtectedRoute = ({ children }) => {
@@ -97,6 +98,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <PatientProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/seller-dashboard",
+        element: (
+          <ProtectedRoute>
+            <SellerDashboard />
           </ProtectedRoute>
         ),
       },
