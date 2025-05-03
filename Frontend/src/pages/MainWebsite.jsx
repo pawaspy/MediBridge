@@ -346,6 +346,8 @@ const Carousel = () => {
 
 // MedicineCard Component
 const MedicineCard = ({ id, name, description, price, originalPrice, discount, expiryMonths, image }) => {
+  const navigate = useNavigate();
+  
   const handleAddToCart = () => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const existing = cart.find(item => item.id === id);
@@ -362,14 +364,41 @@ const MedicineCard = ({ id, name, description, price, originalPrice, discount, e
     }
     localStorage.setItem('cart', JSON.stringify(cart));
   };
+  
+  const handleViewDetails = () => {
+    // Store the medicine data in localStorage for the product page to access
+    const medicineData = {
+      id,
+      name,
+      description,
+      price,
+      manufacturer: "Generic Manufacturer", // Default value
+      category: "Medicine",
+      dosage: "",
+      expiryDate: new Date(Date.now() + (expiryMonths * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      stock: 100
+    };
+    
+    // Push to the product detail page
+    navigate(`/product/${id}`);
+  };
+  
   return (
     <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#00D37F]/10 hover:border-[#00D37F]/30 transition-all group w-[200px]">
-      <div className="aspect-square rounded-lg bg-white/5 mb-4 p-4 flex items-center justify-center">
+      <div 
+        className="aspect-square rounded-lg bg-white/5 mb-4 p-4 flex items-center justify-center cursor-pointer"
+        onClick={handleViewDetails}
+      >
         <img src={image || "https://via.placeholder.com/200"} alt={name} className="max-h-full object-contain" />
       </div>
       <div className="space-y-2">
         <div className="flex items-start justify-between">
-          <h3 className="text-lg font-semibold text-white">{name}</h3>
+          <h3 
+            className="text-lg font-semibold text-white cursor-pointer hover:text-[#00FFAB] transition-colors"
+            onClick={handleViewDetails}
+          >
+            {name}
+          </h3>
           <span className="bg-[#00D37F]/20 text-[#00D37F] px-2 py-1 rounded-full text-sm">{expiryMonths}M</span>
         </div>
         <p className="text-gray-400 text-sm">{description}</p>
@@ -378,9 +407,20 @@ const MedicineCard = ({ id, name, description, price, originalPrice, discount, e
           <span className="text-sm text-gray-400 line-through">₹{originalPrice}</span>
           <span className="text-[#00D37F] text-sm font-semibold">{discount}% off</span>
         </div>
-        <button className="w-full py-2 bg-[#00FFAB] hover:bg-[#00D37F] text-[#00D37F] font-semibold rounded-lg transition-colors" onClick={handleAddToCart}>
-          Add to Cart
-        </button>
+        <div className="flex gap-2">
+          <button 
+            className="flex-1 py-2 bg-[#00FFAB] hover:bg-[#00D37F] text-[#00D37F] font-semibold rounded-lg transition-colors"
+            onClick={handleAddToCart}
+          >
+            Add to Cart
+          </button>
+          <button
+            className="flex-1 py-2 bg-[#181818] hover:bg-[#252525] text-white border border-[#00FFAB]/30 font-semibold rounded-lg transition-colors"
+            onClick={handleViewDetails}
+          >
+            View
+          </button>
+        </div>
       </div>
     </div>
   );

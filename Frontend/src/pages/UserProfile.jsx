@@ -487,9 +487,6 @@ export default function UserProfile() {
                       <div><span className="font-semibold text-[#00FFAB]">Registration Number:</span> {userData.registrationNumber || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Experience:</span> {userData.experience || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Degrees:</span> {userData.degrees || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Medical School:</span> {userData.medicalSchool || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Graduation Year:</span> {userData.graduationYear || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Certifications:</span> {userData.certifications || 'Not specified'}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Credentials</p>
                         <p className="text-gray-300">
@@ -513,7 +510,6 @@ export default function UserProfile() {
                       <div><span className="font-semibold text-[#00FFAB]">Hospital/Clinic:</span> {userData.hospitalName || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Hospital Address:</span> {userData.hospitalAddress || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Appointment Fee:</span> ₹{userData.appointmentFee || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Languages Spoken:</span> {userData.languages || 'Not specified'}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Consultation Hours</p>
                         <p className="text-gray-300">Monday - Friday: {userData.weekdayHours || '10:00 AM - 5:00 PM'}</p>
