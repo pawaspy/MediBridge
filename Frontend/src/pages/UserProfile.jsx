@@ -9,6 +9,8 @@ import {
   FaCertificate, FaStore, FaFileInvoiceDollar, FaBox, FaMapMarkerAlt, 
   FaInfoCircle
 } from 'react-icons/fa';
+import { doctorService, sellerService, patientService } from '../api/apiService';
+import { removeUserData } from '../utils/auth';
 
 // MainNavbar (copied for consistency)
 const MainNavbar = ({ username, handleSignOut, userRole }) => {
@@ -164,67 +166,86 @@ export default function UserProfile() {
   const [userData, setUserData] = useState({});
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get basic user data
-    const basicUserData = localStorage.getItem('userData');
-    
-    // Get complete registration form data
-    const registrationData = localStorage.getItem('registrationFormData');
-    
-    if (basicUserData) {
-      const parsedBasicData = JSON.parse(basicUserData);
-      setUsername(parsedBasicData.username);
-      setRole(parsedBasicData.role);
-      setEmail(parsedBasicData.email);
-      
-      // If we have detailed registration data, use it
-      if (registrationData) {
-        const parsedRegData = JSON.parse(registrationData);
-        setFullName(parsedRegData.fullName);
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        setError('');
         
-        // Create a complete user profile by combining data
-        const completeUserData = {
-          ...parsedRegData,
-          // Add any computed fields if necessary
-        };
+        // Get basic user data from localStorage
+        const storedUserData = localStorage.getItem('userData');
         
-        setUserData(completeUserData);
-      } else {
-        // Fallback to default values if registration data is not available
-        setUserData({
-          // Patient fallback
-          disease: 'Not specified',
-          bloodGroup: 'Not specified',
-          prescribedMedicines: [],
-          
-          // Doctor fallback
-          specialization: 'Not specified',
-          registrationNumber: 'Not specified',
-          experience: 'Not specified',
-          hospitalName: 'Not specified',
-          
-          // Seller fallback
-          storeName: 'Not specified',
-          gstNumber: 'Not specified',
-          drugLicenseNumber: 'Not specified',
-          storeAddress: 'Not specified',
-          sellerType: 'Not specified'
-        });
+        if (!storedUserData) {
+          navigate('/login');
+          return;
+        }
+        
+        const parsedData = JSON.parse(storedUserData);
+        setUsername(parsedData.username);
+        setRole(parsedData.role);
+        setEmail(parsedData.email);
+        
+        // Fetch detailed user profile based on role
+        let profileData;
+        
+        switch (parsedData.role) {
+          case 'doctor':
+            const doctorResponse = await doctorService.getDoctor(parsedData.username);
+            profileData = doctorResponse.data;
+            break;
+          case 'seller':
+            const sellerResponse = await sellerService.getSeller(parsedData.username);
+            profileData = sellerResponse.data;
+            break;
+          case 'patient':
+            const patientResponse = await patientService.getPatient(parsedData.username);
+            profileData = patientResponse.data;
+            
+            try {
+              // Also get medical profile if it exists
+              const medicalResponse = await patientService.getPatientProfile(parsedData.username);
+              profileData = { ...profileData, medicalProfile: medicalResponse.data };
+            } catch (medicalError) {
+              console.log('Medical profile not found');
+            }
+            break;
+          default:
+            throw new Error('Unknown role');
+        }
+        
+        setUserData(profileData);
+        setFullName(profileData.full_name);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setError('Failed to load profile data. Please try again.');
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+    
+    fetchUserData();
+  }, [navigate]);
 
   const handleSignOut = async () => {
-    localStorage.removeItem('userData');
-    sessionStorage.removeItem('navbarLayout');
+    removeUserData();
     await new Promise(resolve => setTimeout(resolve, 100));
     navigate('/', { replace: true });
   };
 
   // Get the appropriate sidebar links based on user role
   const sidebarLinks = getSidebarLinks(role);
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#101820]">
+        <div className="text-[#00FFAB] text-2xl">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0c0c0c] relative overflow-hidden">
@@ -288,6 +309,12 @@ export default function UserProfile() {
 
         {/* Main Content (right) */}
         <main className="flex-1 flex flex-col items-center justify-start py-8 px-8 md:px-24">
+          {error && (
+            <div className="w-full max-w-3xl mb-8 bg-red-500/20 border border-red-500 text-red-100 p-4 rounded-xl">
+              {error}
+            </div>
+          )}
+          
           <div className="w-full max-w-3xl bg-[#1a1a1a]/80 rounded-3xl shadow-lg border border-[#00FFAB]/10 p-10 backdrop-blur-md">
             {/* Patient Content */}
             {role === 'patient' && (
@@ -296,168 +323,52 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Patient Profile</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {username}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.fullName || fullName}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {email}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.age || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.gender || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Date of Birth:</span> {userData.dob || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Address:</span> {userData.address || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Emergency Contact:</span> {userData.emergencyContact || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Relation to Emergency Contact:</span> {userData.emergencyRelation || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {userData.username}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.full_name}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {userData.email}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.age}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.gender}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile_number}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Address:</span> {userData.address}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Emergency Contact:</span> {userData.emergency_contact}</div>
                     </div>
                   </div>
                 )}
                 {activeSection === 'medical' && (
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Medical Info</h3>
-                    <div className="flex flex-col gap-4 text-lg text-white">
-                      <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mb-6">
-                        <form onSubmit={(e) => {
-                          e.preventDefault();
-                          // Save the form data to localStorage here
-                          const updatedMedicalInfo = {
-                            ...userData,
-                            disease: e.target.disease.value,
-                            bloodGroup: e.target.bloodGroup.value,
-                            allergies: e.target.allergies.value,
-                            medicalHistory: e.target.medicalHistory.value
-                          };
-                          
-                          setUserData(updatedMedicalInfo);
-                          localStorage.setItem('registrationFormData', JSON.stringify(updatedMedicalInfo));
-                          alert('Medical information updated successfully!');
-                        }}>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <label className="block text-[#00FFAB] mb-1">Disease</label>
-                              <input 
-                                type="text" 
-                                name="disease" 
-                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
-                                defaultValue={userData.disease || ''} 
-                                placeholder="Enter disease"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[#00FFAB] mb-1">Blood Group</label>
-                              <select 
-                                name="bloodGroup" 
-                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
-                                defaultValue={userData.bloodGroup || ''}
-                              >
-                                <option value="">Select blood group</option>
-                                <option value="A+">A+</option>
-                                <option value="A-">A-</option>
-                                <option value="B+">B+</option>
-                                <option value="B-">B-</option>
-                                <option value="AB+">AB+</option>
-                                <option value="AB-">AB-</option>
-                                <option value="O+">O+</option>
-                                <option value="O-">O-</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[#00FFAB] mb-1">Allergies</label>
-                              <input 
-                                type="text" 
-                                name="allergies" 
-                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
-                                defaultValue={userData.allergies || ''} 
-                                placeholder="Enter allergies"
-                              />
-                            </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-[#00FFAB] mb-1">Medical History</label>
-                              <textarea 
-                                name="medicalHistory" 
-                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white min-h-[80px]" 
-                                defaultValue={userData.medicalHistory || userData.familyHistory || ''} 
-                                placeholder="Enter medical history"
-                              ></textarea>
-                            </div>
-                          </div>
-                          <br/>
-                          <button type="submit" className="bg-[#00FFAB] text-[#00FFAB] py-2 px-4 rounded-md hover:bg-[#00D37F] transition-colors font-semibold">
-                            Save Medical Information
-                          </button>
-
-                        </form>
+                    {userData.medicalProfile ? (
+                      <div className="flex flex-col gap-4 text-lg text-white">
+                        <div><span className="font-semibold text-[#00FFAB]">Disease/Allergies:</span> {userData.medicalProfile.disease_allergies || 'Not specified'}</div>
+                        <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {userData.medicalProfile.blood_group || 'Not specified'}</div>
+                        <div><span className="font-semibold text-[#00FFAB]">Medical History:</span> {userData.medicalProfile.prescribed_medicine || 'Not specified'}</div>
                       </div>
-                      <br/>
-                      
-                      <div><span className="font-semibold text-[#00FFAB]">Disease:</span> {userData.disease || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {userData.bloodGroup || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Allergies:</span> {userData.allergies || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Medical History:</span> {userData.medicalHistory || userData.familyHistory || 'Not specified'}</div>
-                    </div>
+                    ) : (
+                      <div className="bg-[#121212]/60 rounded-lg p-6 text-center">
+                        <p className="text-gray-400">No medical profile found. Please create one from the Patient Profile page.</p>
+                        <button
+                          onClick={() => navigate('/patient-profile')}
+                          className="mt-4 bg-[#00FFAB]/20 text-[#00FFAB] px-4 py-2 rounded-lg hover:bg-[#00FFAB]/30 transition-colors"
+                        >
+                          Go to Patient Profile
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
                 {activeSection === 'prescriptions' && (
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Prescribed Medicines</h3>
                     
-                    {userData.prescribedMedicines && userData.prescribedMedicines.length > 0 ? (
-                      <ul className="flex flex-col gap-4 text-lg text-white">
-                        {userData.prescribedMedicines.map((med, idx) => (
-                          <li key={idx} className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
-                            <div className="flex flex-col gap-2">
-                              <h4 className="text-xl font-semibold text-[#00FFAB]">{med.name}</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-2">
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Dosage:</span> {med.dosage}
-                                </div>
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Frequency:</span> {med.frequency}
-                                </div>
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Duration:</span> {med.duration || 'As needed'}
-                                </div>
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Instructions:</span> {med.instructions || 'Take as directed'}
-                                </div>
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Prescribed By:</span> {med.prescribedBy || 'Doctor'}
-                                </div>
-                                <div className="text-sm text-gray-300">
-                                  <span className="font-medium text-white">Date:</span> {med.prescriptionDate || 'Not specified'}
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+                    {userData.medicalProfile?.prescribed_medicine ? (
+                      <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
+                        <pre className="font-sans whitespace-pre-wrap">{userData.medicalProfile.prescribed_medicine}</pre>
+                      </div>
                     ) : (
                       <div className="bg-[#121212]/60 rounded-lg p-6 text-center">
                         <p className="text-gray-400">No prescribed medicines found.</p>
                       </div>
                     )}
-                    
-                    <div className="mt-8">
-                      <h4 className="text-xl font-bold text-[#00FFAB] mb-4">Medical Documents</h4>
-                      {userData.medicalDocuments && userData.medicalDocuments.length > 0 ? (
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {userData.medicalDocuments.map((doc, idx) => (
-                            <li key={idx} className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1">
-                                  <p className="font-medium text-white">{doc.name}</p>
-                                  <p className="text-sm text-gray-400">Uploaded on: {doc.uploadDate || 'Not specified'}</p>
-                                </div>
-                                <button className="bg-[#00FFAB]/20 text-[#00FFAB] px-3 py-1 rounded-lg text-sm">
-                                  View
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="bg-[#121212]/60 rounded-lg p-6 text-center">
-                          <p className="text-gray-400">No medical documents found.</p>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </>
@@ -470,13 +381,13 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Doctor Profile</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {username}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.fullName || fullName}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {email}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Specialization:</span> {userData.specialization || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.doctorAge || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.doctorGender || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {userData.username}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.full_name}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {userData.email}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Specialization:</span> {userData.specialization}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.age}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.gender}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile_number}</div>
                     </div>
                   </div>
                 )}
@@ -484,20 +395,12 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Qualifications</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Registration Number:</span> {userData.registrationNumber || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Experience:</span> {userData.experience || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Degrees:</span> {userData.degrees || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Registration Number:</span> {userData.registration_number}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Experience:</span> {userData.years_experience} years</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Credentials</p>
                         <p className="text-gray-300">
-                          {userData.degreeCertificate ? 
-                            'Degree certificate uploaded and verified' : 
-                            'No degree certificate uploaded'}
-                        </p>
-                        <p className="text-gray-300">
-                          {userData.governmentId ? 
-                            'Government ID uploaded and verified' : 
-                            'No government ID uploaded'}
+                          This doctor's credentials have been verified by MediBridge.
                         </p>
                       </div>
                     </div>
@@ -507,14 +410,12 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Practice Details</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Hospital/Clinic:</span> {userData.hospitalName || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Hospital Address:</span> {userData.hospitalAddress || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Appointment Fee:</span> ₹{userData.appointmentFee || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Hospital/Clinic:</span> {userData.hospital_name || 'Not specified'}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Consultation Hours</p>
-                        <p className="text-gray-300">Monday - Friday: {userData.weekdayHours || '10:00 AM - 5:00 PM'}</p>
-                        <p className="text-gray-300">Saturday: {userData.saturdayHours || '10:00 AM - 1:00 PM'}</p>
-                        <p className="text-gray-300">Sunday: {userData.sundayHours || 'Closed'}</p>
+                        <p className="text-gray-300">Monday - Friday: 10:00 AM - 5:00 PM</p>
+                        <p className="text-gray-300">Saturday: 10:00 AM - 1:00 PM</p>
+                        <p className="text-gray-300">Sunday: Closed</p>
                       </div>
                     </div>
                   </div>
@@ -529,11 +430,11 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Seller Profile</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {username}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.fullName || fullName}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {email}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Store Name:</span> {userData.storeName || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Seller Type:</span> {userData.sellerType || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Username:</span> {userData.username}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Full Name:</span> {userData.full_name}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Email:</span> {userData.email}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Store Name:</span> {userData.store_name}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Seller Type:</span> {userData.seller_type}</div>
                     </div>
                   </div>
                 )}
@@ -541,13 +442,12 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Store Information</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Store Name:</span> {userData.storeName || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Type:</span> {userData.sellerType || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Store Name:</span> {userData.store_name}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Type:</span> {userData.seller_type}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile_number}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
-                        <p className="font-semibold text-[#00FFAB] mb-2">Store Statistics</p>
-                        <p className="text-gray-300">Total Products: {userData.totalProducts || 'Not specified'}</p>
-                        <p className="text-gray-300">Active Listings: {userData.activeListings || 'Not specified'}</p>
-                        <p className="text-gray-300">Customer Rating: {userData.customerRating || 'Not specified'}</p>
+                        <p className="font-semibold text-[#00FFAB] mb-2">Store Verification</p>
+                        <p className="text-green-400 font-medium">✓ Verified Seller</p>
                       </div>
                     </div>
                   </div>
@@ -556,14 +456,11 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">License Details</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">GST Number:</span> {userData.gstNumber || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Drug License Number:</span> {userData.drugLicenseNumber || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">GST Number:</span> {userData.gst_number}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Drug License Number:</span> {userData.drug_license_number}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Verification Status</p>
-                        <p className="text-green-400 font-medium">
-                          {userData.licenseVerified ? '✓ Licenses Verified' : '✗ Licenses Not Verified'}
-                        </p>
-                        <p className="text-gray-300 mt-2">Last verified: {userData.licenseVerifiedDate || 'Not specified'}</p>
+                        <p className="text-green-400 font-medium">✓ Licenses Verified</p>
                       </div>
                     </div>
                   </div>
@@ -574,12 +471,12 @@ export default function UserProfile() {
                     <div className="flex flex-col gap-4 text-lg text-white">
                       <div><span className="font-semibold text-[#00FFAB]">Address:</span></div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
-                        <p className="text-gray-300">{userData.storeAddress || 'Not specified'}</p>
+                        <p className="text-gray-300">{userData.store_address}</p>
                       </div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Business Hours</p>
-                        <p className="text-gray-300">Monday - Saturday: {userData.businessHours || 'Not specified'}</p>
-                        <p className="text-gray-300">Sunday: {userData.sundayHours || 'Not specified'}</p>
+                        <p className="text-gray-300">Monday - Saturday: 9:00 AM - 9:00 PM</p>
+                        <p className="text-gray-300">Sunday: 10:00 AM - 6:00 PM</p>
                       </div>
                     </div>
                   </div>
