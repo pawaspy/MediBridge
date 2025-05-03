@@ -1,15 +1,15 @@
 package util
 
 const (
-	SellerTypePharmacy = "retail pharmacy"
-	WholeSaleDistributor = "wholesale distributor"
-	Hospital = "hospital"
-	NGO = "NGO"
+	RetailSeller    = "retail"
+	WholesaleSeller = "wholesale"
+	HospitalSeller  = "hospital"
+	NGOSeller       = "ngo"
 )
 
 func IsValidSellerType(sellerType string) bool {
 	switch sellerType {
-	case SellerTypePharmacy, WholeSaleDistributor, Hospital, NGO:
+	case RetailSeller, WholesaleSeller, HospitalSeller, NGOSeller:
 		return true
 	default:
 		return false

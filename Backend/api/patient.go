@@ -285,7 +285,7 @@ type loginUserResponse struct {
 	User                 userResponse `json:"user"`
 }
 
-func (server *Server) loginPatient(ctx *gin.Context) {
+func (server *Server) LoginPatient(ctx *gin.Context) {
 	var req loginUserRequest
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))

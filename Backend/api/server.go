@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -70,43 +71,89 @@ func (server *Server) setupRouter() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Add routes
+	// Add a debug endpoint for testing seller creation
+	router.GET("/api/test/seller", func(c *gin.Context) {
+		util.LogInfo("Test seller creation endpoint called")
+
+		// Create a test seller with hardcoded values
+		hashedPassword, err := util.HashPassword("testpassword")
+		if err != nil {
+			util.LogError("Failed to hash password: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("Failed to hash password: %v", err),
+			})
+			return
+		}
+
+		testSeller := db.CreateSellerParams{
+			Username:          "test_seller_" + fmt.Sprint(time.Now().Unix()),
+			FullName:          "Test Seller",
+			Email:             "test" + fmt.Sprint(time.Now().Unix()) + "@example.com",
+			Password:          hashedPassword,
+			MobileNumber:      "1234567890",
+			StoreName:         "Test Store",
+			GstNumber:         "TEST123456",
+			DrugLicenseNumber: "DL123456",
+			SellerType:        "retail",
+			StoreAddress:      "Test Address",
+		}
+
+		util.LogInfo("Creating test seller: %+v", testSeller)
+
+		seller, err := server.store.CreateSeller(c, testSeller)
+		if err != nil {
+			util.LogError("Failed to create test seller: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("Failed to create test seller: %v", err),
+			})
+			return
+		}
+
+		util.LogInfo("Successfully created test seller")
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Test seller created successfully",
+			"seller":  seller,
+		})
+	})
+
+	// Setup routes
+	publicRoutes := router.Group("/api")
 	authRoutes := router.Group("/api").Use(authMiddleware(server.tokenMaker))
 
 	// Auth routes
-	router.POST("/api/patients", server.CreatePatient)
-	router.POST("/api/loginpatient", server.loginPatient)
-	router.POST("/api/doctors", server.CreateDoctor)
-	router.POST("/api/logindoctor", server.loginDoctor)
-	router.POST("/api/sellers", server.CreateSeller)
-	router.POST("/api/loginseller", server.loginSeller)
+	publicRoutes.POST("/patients", server.CreatePatient)
+	publicRoutes.POST("/loginpatient", server.LoginPatient)
+	publicRoutes.POST("/doctors", server.CreateDoctor)
+	publicRoutes.POST("/logindoctor", server.LoginDoctor)
+	publicRoutes.POST("/sellers", server.CreateSeller)
+	publicRoutes.POST("/loginseller", server.LoginSeller)
 
 	// Patient routes
-	router.GET("/api/patients/:username", server.GetPatient)
+	publicRoutes.GET("/patients/:username", server.GetPatient)
 	authRoutes.PUT("/patients", server.UpdatePatient)
 	authRoutes.DELETE("/patients/:username", server.DeletePatient)
 
 	// Patient Profile routes
-	router.GET("/api/patient-profiles/:username", server.GetPatientProfile)
+	publicRoutes.GET("/patient-profiles/:username", server.GetPatientProfile)
 	authRoutes.POST("/patient-profiles", server.CreatePatientProfile)
 	authRoutes.PUT("/patient-profiles", server.UpdatePatientProfile)
 	authRoutes.DELETE("/patient-profiles/:username", server.DeletePatientProfile)
 	authRoutes.GET("/patient-profiles", server.ListPatientProfiles)
 
 	// Doctor routes
-	router.GET("/api/doctors/:username", server.GetDoctor)
+	publicRoutes.GET("/doctors/:username", server.GetDoctor)
 	authRoutes.PUT("/doctors", server.UpdateDoctor)
 	authRoutes.DELETE("/doctors/:username", server.DeleteDoctor)
 
 	// Seller routes
-	router.GET("/api/sellers/:username", server.GetSeller)
+	publicRoutes.GET("/sellers/:username", server.GetSeller)
 	authRoutes.PUT("/sellers", server.UpdateSeller)
 	authRoutes.DELETE("/sellers/:username", server.DeleteSeller)
 
 	// Medicine routes
-	router.GET("/api/medicines/:id", server.GetMedicine)
-	router.GET("/api/medicines/search", server.SearchMedicinesByNameSortedByPrice)
-	router.GET("/api/sellers/:username/medicines", server.ListSellerMedicinesByExpiry)
+	publicRoutes.GET("/medicines/:id", server.GetMedicine)
+	publicRoutes.GET("/medicines/search", server.SearchMedicinesByNameSortedByPrice)
+	publicRoutes.GET("/sellers/:username/medicines", server.ListSellerMedicinesByExpiry)
 	authRoutes.POST("/medicines", server.CreateMedicine)
 	authRoutes.PUT("/medicines", server.UpdateMedicine)
 	authRoutes.DELETE("/medicines/:id", server.DeleteMedicine)
@@ -120,7 +167,7 @@ func (server *Server) setupRouter() {
 	authRoutes.GET("/cart/count", server.GetCartCount)
 
 	// Aliza AI agent routes
-	alizaRoutes := router.Group("/api/aliza")
+	alizaRoutes := publicRoutes.Group("/aliza")
 	server.alizaHandler.RegisterRoutes(alizaRoutes)
 
 	server.router = router
