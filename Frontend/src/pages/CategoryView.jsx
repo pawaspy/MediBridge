@@ -193,9 +193,10 @@ const CategoryView = () => {
 
   const handleSignOut = async () => {
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('navbarLayout');
     setUsername('');
     await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   return (

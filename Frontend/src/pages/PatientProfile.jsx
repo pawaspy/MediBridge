@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Background } from '../components/Background';
 import { FaUser, FaHeartbeat, FaPrescriptionBottleAlt, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { FiEdit2 } from 'react-icons/fi';
 
 const sidebarLinks = [
   { label: 'Profile', icon: <FaUser />, section: 'profile' },
@@ -13,6 +14,8 @@ const sidebarLinks = [
 const mockPatientData = {
   disease: 'Hypertension',
   bloodGroup: 'A+',
+  allergies: '',
+  medicalHistory: '',
   prescribedMedicines: [
     { name: 'Amlodipine', dosage: '5mg', frequency: 'Once daily' },
     { name: 'Metoprolol', dosage: '25mg', frequency: 'Once daily' },
@@ -23,19 +26,63 @@ export default function PatientProfile() {
   const [activeSection, setActiveSection] = useState('profile');
   const [username, setUsername] = useState('');
   const [patientData, setPatientData] = useState(mockPatientData);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const userData = localStorage.getItem('userData');
+    const registrationData = localStorage.getItem('registrationFormData');
+    
     if (userData) {
       const { username } = JSON.parse(userData);
       setUsername(username);
+      
+      // Use complete user data if available
+      if (registrationData) {
+        const fullData = JSON.parse(registrationData);
+        setPatientData({
+          ...mockPatientData,
+          disease: fullData.disease || mockPatientData.disease,
+          bloodGroup: fullData.bloodGroup || mockPatientData.bloodGroup,
+          allergies: fullData.allergies || '',
+          medicalHistory: fullData.medicalHistory || '',
+          prescribedMedicines: fullData.prescribedMedicines || mockPatientData.prescribedMedicines
+        });
+      }
     }
   }, []);
 
+  const handleSaveChanges = (e) => {
+    e.preventDefault();
+    
+    const updatedData = {
+      ...patientData,
+      disease: e.target.disease.value,
+      bloodGroup: e.target.bloodGroup.value,
+      allergies: e.target.allergies.value,
+      medicalHistory: e.target.medicalHistory.value
+    };
+    
+    setPatientData(updatedData);
+    
+    // Save to local storage
+    const userData = JSON.parse(localStorage.getItem('userData')) || {};
+    const updatedUserData = {
+      ...userData,
+      disease: updatedData.disease,
+      bloodGroup: updatedData.bloodGroup,
+      allergies: updatedData.allergies,
+      medicalHistory: updatedData.medicalHistory
+    };
+    localStorage.setItem('userData', JSON.stringify(updatedUserData));
+    
+    setIsEditing(false);
+  };
+
   const handleSignOut = () => {
     localStorage.removeItem('userData');
-    navigate('/login');
+    sessionStorage.removeItem('navbarLayout');
+    navigate('/', { replace: true });
   };
 
   return (
@@ -101,11 +148,89 @@ export default function PatientProfile() {
           )}
           {activeSection === 'medical' && (
             <div>
-              <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Medical Info</h3>
-              <div className="flex flex-col gap-4 text-lg text-white">
-                <div><span className="font-semibold text-[#00FFAB]">Disease:</span> {patientData.disease}</div>
-                <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {patientData.bloodGroup}</div>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-3xl font-bold text-[#00FFAB]">Medical Info</h3>
+                <button 
+                  className="bg-[#00FFAB]/20 text-[#00FFAB] px-4 py-2 rounded-lg hover:bg-[#00FFAB]/30 transition-colors"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? 'Cancel' : 'Edit'}
+                </button>
               </div>
+
+              {isEditing ? (
+                <form onSubmit={handleSaveChanges} className="bg-[#121212]/60 rounded-lg p-6 border border-[#00FFAB]/10 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-[#00FFAB] mb-1">Disease/Condition</label>
+                      <input 
+                        type="text" 
+                        name="disease" 
+                        className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                        defaultValue={patientData.disease || ''} 
+                        placeholder="Enter disease or condition"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#00FFAB] mb-1">Blood Group</label>
+                      <input 
+                        type="text" 
+                        name="bloodGroup" 
+                        className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                        defaultValue={patientData.bloodGroup || ''} 
+                        placeholder="Enter blood group"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#00FFAB] mb-1">Allergies</label>
+                      <input 
+                        type="text" 
+                        name="allergies" 
+                        className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                        defaultValue={patientData.allergies || ''} 
+                        placeholder="Enter allergies"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[#00FFAB] mb-1">Medical History</label>
+                      <textarea 
+                        name="medicalHistory" 
+                        className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white min-h-[80px]" 
+                        defaultValue={patientData.medicalHistory || patientData.familyHistory || ''} 
+                        placeholder="Enter medical history"
+                      ></textarea>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditing(false)} 
+                      className="bg-transparent border border-[#00FFAB]/50 text-[#00FFAB] py-2 px-4 rounded-md hover:bg-[#00FFAB]/10 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="bg-[#00FFAB] text-black py-2 px-4 rounded-md hover:bg-[#00D37F] transition-colors font-semibold"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex flex-col gap-4 text-lg text-white">
+                  <div><span className="font-semibold text-[#00FFAB]">Disease/Condition:</span> {patientData.disease || 'Not specified'}</div>
+                  <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {patientData.bloodGroup || 'Not specified'}</div>
+                  <div><span className="font-semibold text-[#00FFAB]">Allergies:</span> {patientData.allergies || 'Not specified'}</div>
+                  <div><span className="font-semibold text-[#00FFAB]">Medical History:</span> {patientData.medicalHistory || patientData.familyHistory || 'Not specified'}</div>
+                  <button 
+                    onClick={() => setIsEditing(true)} 
+                    className="self-start mt-4 bg-[#00FFAB]/20 text-[#00FFAB] py-2 px-4 rounded-md hover:bg-[#00FFAB]/30 transition-colors flex items-center gap-2"
+                  >
+                    <FiEdit2 size={18} /> Edit Information
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {activeSection === 'prescriptions' && (
