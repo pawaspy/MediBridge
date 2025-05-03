@@ -6,8 +6,10 @@ import logo from '../removed-bg-medibridge.png';
 import {
   FaSearch, FaShoppingCart, FaUser, FaCaretDown, FaSignOutAlt,
   FaStore, FaIdCard, FaMapMarkerAlt, FaPlus, FaPills,
-  FaEdit, FaTrash, FaFilter, FaSortAmountDown, FaSortAmountUp
+  FaEdit, FaTrash, FaFilter, FaSortAmountDown, FaSortAmountUp,
+  FaClipboardList, FaBoxOpen, FaChartLine, FaShippingFast, FaCog, FaTachometerAlt
 } from 'react-icons/fa';
+import MedicineManagement from '../components/MedicineManagement';
 
 // Navbar component with advanced search integration
 const Navbar = ({ username, handleSignOut }) => {
@@ -190,8 +192,9 @@ export default function SellerDashboard() {
 
   const handleSignOut = async () => {
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('navbarLayout');
     await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   // Medicine CRUD operations
@@ -271,6 +274,40 @@ export default function SellerDashboard() {
     return expiryDate < twoMonthsFromNow;
   }).length;
 
+  // Dashboard sections configuration
+  const dashboardSections = [
+    { 
+      id: 'dashboard', 
+      label: 'Dashboard Overview', 
+      icon: <FaTachometerAlt /> 
+    },
+    { 
+      id: 'medicines', 
+      label: 'Medicine Management', 
+      icon: <FaBoxOpen /> 
+    },
+    { 
+      id: 'orders', 
+      label: 'Orders', 
+      icon: <FaClipboardList /> 
+    },
+    { 
+      id: 'sales', 
+      label: 'Sales Analytics', 
+      icon: <FaChartLine /> 
+    },
+    { 
+      id: 'shipping', 
+      label: 'Shipping', 
+      icon: <FaShippingFast /> 
+    },
+    { 
+      id: 'settings', 
+      label: 'Store Settings', 
+      icon: <FaCog /> 
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-[#0c0c0c] relative overflow-hidden">
       {/* Star Background */}
@@ -295,18 +332,18 @@ export default function SellerDashboard() {
             <p className="text-gray-300 text-sm">Welcome, <span className="font-semibold">{username || 'Seller'}</span></p>
           </div>
           <nav className="flex flex-col gap-2 flex-1">
-            {sidebarLinks.map(link => (
+            {dashboardSections.map((section) => (
               <button
-                key={link.section}
+                key={section.id}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-colors
-                  ${activeSection === link.section
+                  ${activeSection === section.id
                     ? 'bg-[#00FFAB]/20 text-[#00FFAB]'
                     : 'text-gray-200 hover:bg-[#00FFAB]/10 hover:text-[#00FFAB]'}
                 `}
-                onClick={() => setActiveSection(link.section)}
+                onClick={() => setActiveSection(section.id)}
               >
-                {link.icon}
-                {link.label}
+                {section.icon}
+                {section.label}
               </button>
             ))}
           </nav>
@@ -697,6 +734,43 @@ export default function SellerDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Medicine Management */}
+          {activeSection === 'medicines' && (
+            <MedicineManagement />
+          )}
+
+          {/* Orders Section (Placeholder) */}
+          {activeSection === 'orders' && (
+            <div className="bg-[#1a1a1a]/80 rounded-xl shadow-lg border border-[#00FFAB]/10 p-6 backdrop-blur-md">
+              <h2 className="text-3xl font-bold text-[#00FFAB] mb-6">Orders Management</h2>
+              <p className="text-white mb-4">This section is under development. Coming soon!</p>
+            </div>
+          )}
+
+          {/* Sales Section (Placeholder) */}
+          {activeSection === 'sales' && (
+            <div className="bg-[#1a1a1a]/80 rounded-xl shadow-lg border border-[#00FFAB]/10 p-6 backdrop-blur-md">
+              <h2 className="text-3xl font-bold text-[#00FFAB] mb-6">Sales Analytics</h2>
+              <p className="text-white mb-4">This section is under development. Coming soon!</p>
+            </div>
+          )}
+
+          {/* Shipping Section (Placeholder) */}
+          {activeSection === 'shipping' && (
+            <div className="bg-[#1a1a1a]/80 rounded-xl shadow-lg border border-[#00FFAB]/10 p-6 backdrop-blur-md">
+              <h2 className="text-3xl font-bold text-[#00FFAB] mb-6">Shipping Management</h2>
+              <p className="text-white mb-4">This section is under development. Coming soon!</p>
+            </div>
+          )}
+
+          {/* Settings Section (Placeholder) */}
+          {activeSection === 'settings' && (
+            <div className="bg-[#1a1a1a]/80 rounded-xl shadow-lg border border-[#00FFAB]/10 p-6 backdrop-blur-md">
+              <h2 className="text-3xl font-bold text-[#00FFAB] mb-6">Store Settings</h2>
+              <p className="text-white mb-4">This section is under development. Coming soon!</p>
             </div>
           )}
 

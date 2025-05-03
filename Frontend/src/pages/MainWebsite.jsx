@@ -441,7 +441,7 @@ const MedicineSection = ({ title, medicines }) => {
 
 // Footer Component
 const Footer = () => (
-  <footer className="w-full bg-[#101820] border-t border-[#00D37F]/10 py-8 mt-24 text-center text-white">
+  <footer className="w-full bg-[#101820]/80 backdrop-blur-md border-t border-[#00D37F]/10 py-8 mt-24 text-center text-white">
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 px-6">
       <div className="flex flex-wrap gap-6 justify-center md:justify-start text-lg">
         <a href="/" className="hover:text-[#00D37F] transition-colors">Home</a>
@@ -475,10 +475,11 @@ const MainWebsite = () => {
 
   const handleSignOut = async () => {
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('navbarLayout');
     setUsername('');
     setUserRole('');
     await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   const heartMedicines = [

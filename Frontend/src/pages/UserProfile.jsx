@@ -218,9 +218,9 @@ export default function UserProfile() {
 
   const handleSignOut = async () => {
     localStorage.removeItem('userData');
-    setUsername('');
+    sessionStorage.removeItem('navbarLayout');
     await new Promise(resolve => setTimeout(resolve, 100));
-    window.location.href = '/';
+    navigate('/', { replace: true });
   };
 
   // Get the appropriate sidebar links based on user role
@@ -304,9 +304,6 @@ export default function UserProfile() {
                       <div><span className="font-semibold text-[#00FFAB]">Date of Birth:</span> {userData.dob || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Address:</span> {userData.address || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">City:</span> {userData.city || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">State:</span> {userData.state || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">PIN Code:</span> {userData.pincode || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Emergency Contact:</span> {userData.emergencyContact || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Relation to Emergency Contact:</span> {userData.emergencyRelation || 'Not specified'}</div>
                     </div>
@@ -316,14 +313,84 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Medical Info</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
+                      <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mb-6">
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          // Save the form data to localStorage here
+                          const updatedMedicalInfo = {
+                            ...userData,
+                            disease: e.target.disease.value,
+                            bloodGroup: e.target.bloodGroup.value,
+                            allergies: e.target.allergies.value,
+                            medicalHistory: e.target.medicalHistory.value
+                          };
+                          
+                          setUserData(updatedMedicalInfo);
+                          localStorage.setItem('registrationFormData', JSON.stringify(updatedMedicalInfo));
+                          alert('Medical information updated successfully!');
+                        }}>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-[#00FFAB] mb-1">Disease</label>
+                              <input 
+                                type="text" 
+                                name="disease" 
+                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                                defaultValue={userData.disease || ''} 
+                                placeholder="Enter disease"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[#00FFAB] mb-1">Blood Group</label>
+                              <select 
+                                name="bloodGroup" 
+                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                                defaultValue={userData.bloodGroup || ''}
+                              >
+                                <option value="">Select blood group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[#00FFAB] mb-1">Allergies</label>
+                              <input 
+                                type="text" 
+                                name="allergies" 
+                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white" 
+                                defaultValue={userData.allergies || ''} 
+                                placeholder="Enter allergies"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[#00FFAB] mb-1">Medical History</label>
+                              <textarea 
+                                name="medicalHistory" 
+                                className="w-full bg-[#1a1a1a] border border-[#00FFAB]/30 rounded-md px-3 py-2 text-white min-h-[80px]" 
+                                defaultValue={userData.medicalHistory || userData.familyHistory || ''} 
+                                placeholder="Enter medical history"
+                              ></textarea>
+                            </div>
+                          </div>
+                          <br/>
+                          <button type="submit" className="bg-[#00FFAB] text-[#00FFAB] py-2 px-4 rounded-md hover:bg-[#00D37F] transition-colors font-semibold">
+                            Save Medical Information
+                          </button>
+
+                        </form>
+                      </div>
+                      <br/>
+                      
                       <div><span className="font-semibold text-[#00FFAB]">Disease:</span> {userData.disease || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {userData.bloodGroup || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Allergies:</span> {userData.allergies || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Height:</span> {userData.height || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Weight:</span> {userData.weight || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Chronic Conditions:</span> {userData.chronicConditions || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Previous Surgeries:</span> {userData.previousSurgeries || 'Not specified'}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Family History:</span> {userData.familyHistory || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Medical History:</span> {userData.medicalHistory || userData.familyHistory || 'Not specified'}</div>
                     </div>
                   </div>
                 )}
