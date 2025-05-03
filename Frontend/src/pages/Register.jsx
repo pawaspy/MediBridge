@@ -85,6 +85,7 @@ export default function Register() {
     }
 
     if (role === 'seller') {
+      if (!formData.username) newErrors.username = 'Username is required';
       if (!formData.storeName) newErrors.storeName = 'Store name is required';
       if (!formData.gstNumber) newErrors.gstNumber = 'GST number is required';
       if (!formData.drugLicenseNumber) newErrors.drugLicenseNumber = 'Drug license number is required';
@@ -396,6 +397,19 @@ export default function Register() {
                         placeholder="Enter store name"
                       />
                       {errors.storeName && <p className="text-red-500 text-sm mt-1">{errors.storeName}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Username</label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter your username"
+                      />
+                      {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
                     </div>
 
                     <div>

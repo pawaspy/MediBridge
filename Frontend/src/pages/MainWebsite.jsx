@@ -85,9 +85,10 @@ const MainNavbar = ({ username, handleSignOut }) => {
             <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1a1a]/80 backdrop-blur-md border border-[#00D37F]/20 rounded-xl shadow-xl shadow-[#00D37F]/5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="py-3 space-y-1">
                 <a 
-                  href="#" 
-                  className="block px-6 py-3 text-center text-[#7B68EE] no-underline" 
+                  href="#"
+                  className="block px-6 py-3 text-center text-[#7B68EE] no-underline"
                   style={{ textDecoration: 'none' }}
+                  onClick={e => { e.preventDefault(); navigate('/profile'); }}
                 >
                   Your Profile
                 </a>

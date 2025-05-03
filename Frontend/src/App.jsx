@@ -9,6 +9,8 @@ import MainWebsite from './pages/MainWebsite'
 import CategoryView from './pages/CategoryView'
 import Cart from './pages/Cart'
 import Healia from './pages/Healia'
+import UserProfile from './pages/UserProfile'
+import PatientProfile from './pages/PatientProfile'
 
 // Check authentication for protected routes
 const ProtectedRoute = ({ children }) => {
@@ -82,6 +84,22 @@ const router = createBrowserRouter([
           <Cart />
         </PatientRoute>
       ) },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/patient-profile",
+        element: (
+          <ProtectedRoute>
+            <PatientProfile />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ], {
