@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MedicineSearch from './MedicineSearch';
 
 const MedicineCard = ({ medicine, isBestSeller = false }) => {
   const {
@@ -98,6 +99,10 @@ const MedicineGrid = ({ medicines }) => {
     onlyBestSellers: false
   });
 
+  const handleSearchResults = (results) => {
+    setFilteredMedicines(results);
+  };
+
   useEffect(() => {
     if (!medicines) return;
 
@@ -143,6 +148,7 @@ const MedicineGrid = ({ medicines }) => {
 
   return (
     <div>
+      <MedicineSearch onSearchResults={handleSearchResults} />
 
       <div className='bg-[#1a1a1a]/60 rounded-lg  flex gap-4 justify-start'>
         {/* Expiry Filter */}
@@ -198,9 +204,7 @@ const MedicineGrid = ({ medicines }) => {
           {filteredMedicines.map((medicine, index) => {
             const isBestSeller = medicine.bestSeller === true;
             return (
-              <div key={medicine.id || index} className={isBestSeller ? "flex justify-center" : ""}>
-                <MedicineCard medicine={medicine} isBestSeller={isBestSeller} />
-              </div>
+              <MedicineCard key={index} medicine={medicine} isBestSeller={isBestSeller} />
             );
           })}
         </div>

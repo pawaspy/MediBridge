@@ -1,7 +1,7 @@
 package util
 
 const (
-	Male = "male"
-	Female = "female"
-	Other = "other"
+	Male   = "Male"   
+	Female = "Female" 
+	Other  = "Other"  
 )
