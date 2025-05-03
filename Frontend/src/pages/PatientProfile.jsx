@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Background } from '../components/Background';
 import { FaUser, FaHeartbeat, FaPrescriptionBottleAlt, FaSignOutAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axiosConfig';
 
 const sidebarLinks = [
   { label: 'Profile', icon: <FaUser />, section: 'profile' },
@@ -26,11 +27,21 @@ export default function PatientProfile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      const { username } = JSON.parse(userData);
-      setUsername(username);
-    }
+    const fetchPatientData = async () => {
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const { username } = JSON.parse(userData);
+          setUsername(username);
+          const response = await api.get(`/api/patients/${username}`);
+          setPatientData(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching patient data:', error);
+      }
+    };
+
+    fetchPatientData();
   }, []);
 
   const handleSignOut = () => {

@@ -5,6 +5,7 @@ import { FaUser, FaUserMd, FaStore, FaUpload } from 'react-icons/fa';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import MainWebsite from './MainWebsite';
 import Navbar from '../components/Navbar';
+import api from '../api/axiosConfig';
 
 // Add country codes data
 const countryCodes = [
@@ -103,14 +104,19 @@ export default function Register() {
     }
 
     if (role === 'seller') {
-      // Keep the original seller validations
+      if (!formData.storeName) newErrors.storeName = 'Store name is required';
+      if (!formData.gstNumber) newErrors.gstNumber = 'GST number is required';
+      if (!formData.drugLicenseNumber) newErrors.drugLicenseNumber = 'Drug license number is required';
+      if (!formData.sellerType) newErrors.sellerType = 'Seller type is required';
+      if (!formData.storeAddress) newErrors.storeAddress = 'Store address is required';
     }
 
+    console.log('Validation errors:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('Form submitted');
     
@@ -121,9 +127,9 @@ export default function Register() {
       console.log('Form is valid, preparing to save data');
       
       try {
-        // Save basic user data to localStorage
+        // Save user data to localStorage
         const userData = {
-          username: formData.username || formData.fullName,
+          username: formData.username,
           email: formData.email,
           role: role,
         };
@@ -138,6 +144,53 @@ export default function Register() {
         localStorage.setItem('registrationFormData', JSON.stringify(completeFormData));
         console.log('Complete form data saved to localStorage');
         
+        // Prepare data for backend API
+        let apiData = {};
+        
+        // Map common fields
+        apiData = {
+          username: formData.username,
+          full_name: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          mobile_number: countryCode + formData.mobile, // Include country code
+          gender: formData.gender || (role === 'doctor' ? formData.doctorGender : ''),
+          age: parseInt(formData.age || formData.doctorAge || '0'),
+        };
+        
+        // Add role-specific fields
+        if (role === 'doctor') {
+          apiData = {
+            ...apiData,
+            specialization: formData.specialization,
+            registration_number: formData.registrationNumber,
+            hospital_name: formData.hospitalName,
+            years_experience: parseInt(formData.experience || '0'),
+          };
+        } else if (role === 'patient') {
+          apiData = {
+            ...apiData,
+            address: formData.address,
+            emergency_contact: countryCode + formData.emergencyContact,
+            gender: formData.gender || 'male', // Ensure gender is always provided
+          };
+        } else if (role === 'seller') {
+          apiData = {
+            ...apiData,
+            store_name: formData.storeName,
+            gst_number: formData.gstNumber,
+            drug_license_number: formData.drugLicenseNumber,
+            seller_type: formData.sellerType || 'retail', // Provide a default seller type
+            store_address: formData.storeAddress,
+          };
+        }
+        
+        // Send registration data to backend
+        console.log('Sending data to backend:', apiData);
+        const endpoint = `/api/${role}s`;
+        const response = await api.post(endpoint, apiData);
+        console.log('Registration successful:', response.data);
+        
         // Redirect with a slight delay to ensure localStorage is updated
         console.log('Attempting to navigate to /main');
         setTimeout(() => {
@@ -145,6 +198,8 @@ export default function Register() {
         }, 100);
       } catch (error) {
         console.error('Error during form submission:', error);
+        // Add alert to show error to user
+        alert(`Registration failed: ${error.response?.data?.error?.message || error.message}`);
       }
     } else {
       console.log('Form validation failed, errors:', errors);

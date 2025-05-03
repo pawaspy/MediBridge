@@ -9,6 +9,7 @@ import {
   FaCertificate, FaStore, FaFileInvoiceDollar, FaBox, FaMapMarkerAlt, 
   FaInfoCircle
 } from 'react-icons/fa';
+import api from '../api/axiosConfig';
 
 // MainNavbar (copied for consistency)
 const MainNavbar = ({ username, handleSignOut, userRole }) => {
@@ -167,53 +168,24 @@ export default function UserProfile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get basic user data
-    const basicUserData = localStorage.getItem('userData');
-    
-    // Get complete registration form data
-    const registrationData = localStorage.getItem('registrationFormData');
-    
-    if (basicUserData) {
-      const parsedBasicData = JSON.parse(basicUserData);
-      setUsername(parsedBasicData.username);
-      setRole(parsedBasicData.role);
-      setEmail(parsedBasicData.email);
-      
-      // If we have detailed registration data, use it
-      if (registrationData) {
-        const parsedRegData = JSON.parse(registrationData);
-        setFullName(parsedRegData.fullName);
-        
-        // Create a complete user profile by combining data
-        const completeUserData = {
-          ...parsedRegData,
-          // Add any computed fields if necessary
-        };
-        
-        setUserData(completeUserData);
-      } else {
-        // Fallback to default values if registration data is not available
-        setUserData({
-          // Patient fallback
-          disease: 'Not specified',
-          bloodGroup: 'Not specified',
-          prescribedMedicines: [],
-          
-          // Doctor fallback
-          specialization: 'Not specified',
-          registrationNumber: 'Not specified',
-          experience: 'Not specified',
-          hospitalName: 'Not specified',
-          
-          // Seller fallback
-          storeName: 'Not specified',
-          gstNumber: 'Not specified',
-          drugLicenseNumber: 'Not specified',
-          storeAddress: 'Not specified',
-          sellerType: 'Not specified'
-        });
+    const fetchUserData = async () => {
+      try {
+        const basicUserData = localStorage.getItem('userData');
+        if (basicUserData) {
+          const { username, role } = JSON.parse(basicUserData);
+          const response = await api.get(`/api/${role}s/${username}`);
+          setUserData(response.data);
+          setUsername(username);
+          setRole(role);
+          setEmail(response.data.email);
+          setFullName(response.data.full_name);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
       }
-    }
+    };
+
+    fetchUserData();
   }, []);
 
   const handleSignOut = async () => {

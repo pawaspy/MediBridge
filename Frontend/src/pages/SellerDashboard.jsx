@@ -8,6 +8,7 @@ import {
   FaStore, FaIdCard, FaMapMarkerAlt, FaPlus, FaPills,
   FaEdit, FaTrash, FaFilter, FaSortAmountDown, FaSortAmountUp
 } from 'react-icons/fa';
+import api from '../api/axiosConfig';
 
 // Navbar component with advanced search integration
 const Navbar = ({ username, handleSignOut }) => {
@@ -152,32 +153,35 @@ export default function SellerDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load seller data
-    const basicUserData = localStorage.getItem('userData');
-    const registrationData = localStorage.getItem('registrationFormData');
-
-    if (basicUserData) {
-      const parsedBasicData = JSON.parse(basicUserData);
-
-      // Check if user is a seller, redirect otherwise
-      if (parsedBasicData.role !== 'seller') {
-        navigate('/profile');
-        return;
+    const fetchSellerData = async () => {
+      try {
+        const basicUserData = localStorage.getItem('userData');
+        if (basicUserData) {
+          const parsedBasicData = JSON.parse(basicUserData);
+          
+          // Check if user is a seller, redirect otherwise
+          if (parsedBasicData.role !== 'seller') {
+            navigate('/profile');
+            return;
+          }
+          
+          setUsername(parsedBasicData.username);
+          setEmail(parsedBasicData.email);
+          
+          const response = await api.get(`/api/sellers/${parsedBasicData.username}`);
+          setUserData(response.data);
+          setFullName(response.data.full_name);
+        } else {
+          // No user data, redirect to login
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Error fetching seller data:', error);
       }
+    };
 
-      setUsername(parsedBasicData.username);
-      setEmail(parsedBasicData.email);
-
-      if (registrationData) {
-        const parsedRegData = JSON.parse(registrationData);
-        setFullName(parsedRegData.fullName);
-        setUserData(parsedRegData);
-      }
-    } else {
-      // No user data, redirect to login
-      navigate('/login');
-    }
-
+    fetchSellerData();
+    
     // Load medicines from localStorage or use initial data
     const storedMedicines = localStorage.getItem('sellerMedicines');
     if (storedMedicines) {
