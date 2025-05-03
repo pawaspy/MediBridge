@@ -31,10 +31,31 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Store the entered value as username in localStorage
+      // Check if the user exists in our stored registration data
+      const registrationData = localStorage.getItem('registrationFormData');
+      
+      if (registrationData) {
+        const parsedData = JSON.parse(registrationData);
+        // Simple check - if email matches, consider it a login success
+        if (parsedData.email === formData.email) {
+          // Store user data with the correct role from registration
+          const userData = {
+            username: parsedData.username || parsedData.fullName,
+            email: parsedData.email,
+            role: parsedData.role || '',
+          };
+          localStorage.setItem('userData', JSON.stringify(userData));
+          
+          // Redirect all users to main page
+          navigate('/main');
+          return;
+        }
+      }
+      
+      // If no match found or no registration data, create default user
       const userData = {
         username: formData.email,
-        // Optionally, you can set a default role or leave it blank
+        email: formData.email,
         role: '',
       };
       localStorage.setItem('userData', JSON.stringify(userData));
