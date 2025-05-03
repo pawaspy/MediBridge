@@ -1,10 +1,8 @@
 package api
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -94,7 +92,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 		return
 	}
 
-	if req.Seller == "" || req.Seller != authPayload.Username || req.Seller != authPayload.Role {
+	if req.Seller == "" || req.Seller != authPayload.Username {
 		err := errors.New("invalid seller username")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -103,7 +101,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 	// Check if the seller exists
 	seller, err := server.store.GetSellerByName(c, req.Seller)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == db.ErrRecordNotFound {
 			err := errors.New("seller not found")
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
@@ -119,7 +117,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 	// Check if the medicine already exists
 	medicine, err := server.store.GetMedicineByName(c, req.Name)
 	if err != nil {
-		if err != sql.ErrNoRows {
+		if err != db.ErrRecordNotFound {
 			c.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
 		}
@@ -155,7 +153,10 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	price, err := strconv.Atoi(req.Price)
+
+	// Create a numeric value from the price string
+	var priceNumeric pgtype.Numeric
+	err = priceNumeric.Scan(req.Price)
 	if err != nil {
 		err := errors.New("invalid price format")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
@@ -169,11 +170,8 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 			Time:  expiryDate,
 			Valid: true,
 		},
-		Quantity: req.Quantity,
-		Price: pgtype.Numeric{
-			Exp:   int32(price),
-			Valid: true,
-		},
+		Quantity:       req.Quantity,
+		Price:          priceNumeric,
 		Discount:       req.Discount,
 		SellerUsername: req.Seller,
 	}
@@ -216,13 +214,15 @@ func (server *Server) UpdateMedicine(c *gin.Context) {
 		return
 	}
 
-	if req.Seller == "" || req.Seller != authPayload.Username || req.Seller != authPayload.Role {
+	if req.Seller == "" || req.Seller != authPayload.Username {
 		err := errors.New("invalid seller username")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	price, err := strconv.Atoi(req.Price)
+	// Create a numeric value from the price string
+	var priceNumeric pgtype.Numeric
+	err := priceNumeric.Scan(req.Price)
 	if err != nil {
 		err := errors.New("invalid price format")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
@@ -246,10 +246,7 @@ func (server *Server) UpdateMedicine(c *gin.Context) {
 			Int32: req.Quantity,
 			Valid: true,
 		},
-		Price: pgtype.Numeric{
-			Exp:   int32(price),
-			Valid: true,
-		},
+		Price: priceNumeric,
 		Discount: pgtype.Int4{
 			Int32: req.Discount,
 			Valid: true,
@@ -282,7 +279,7 @@ func (server *Server) DeleteMedicine(c *gin.Context) {
 		return
 	}
 
-	if medicine.SellerUsername != authPayload.Username || util.Seller != authPayload.Role {
+	if medicine.SellerUsername != authPayload.Username || authPayload.Role != util.Seller {
 		err := errors.New("invalid seller username")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -290,7 +287,7 @@ func (server *Server) DeleteMedicine(c *gin.Context) {
 
 	_, err = server.store.DeleteMedicine(c, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == db.ErrRecordNotFound {
 			err := errors.New("medicine not found")
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
@@ -312,7 +309,7 @@ func (server *Server) GetMedicine(c *gin.Context) {
 
 	medicine, err := server.store.GetMedicine(c, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == db.ErrRecordNotFound {
 			err := errors.New("medicine not found")
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
@@ -341,7 +338,7 @@ func (server *Server) ListSellerMedicinesByExpiry(c *gin.Context) {
 	// Validate the seller exists
 	_, err := server.store.GetSellerByName(c, req.SellerUsername)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == db.ErrRecordNotFound {
 			err := errors.New("seller not found")
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
