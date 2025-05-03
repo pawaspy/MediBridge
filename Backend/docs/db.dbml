@@ -1,0 +1,47 @@
+Project medi_bridge {
+    database_type: 'PostgreSQL'
+    Note: '''
+        # Medi-Bridge Database
+        '''
+}
+
+Enum user_role {
+  doctor
+  patient
+  seller
+}
+
+Table users as U {
+  username varchar [pk]
+  full_name varchar [not null]
+  email varchar [unique, not null]
+  hashed_password varchar [not null]
+  role user_role [not null]
+  is_email_verified boolean [not null, default: false]
+  password_changed_at timestamp [not null, default: `0001-01-01`]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table doctor_profiles as D {
+  username varchar [pk, ref: > U.username, not null]
+  specialization varchar
+  experience_years int
+  clinic_address varchar
+  phone_number varchar
+}
+
+Table patient_profiles as P {
+  username varchar [pk, ref: > U.username, not null]
+  age int
+  blood_group varchar
+  allergies varchar
+  phone_number varchar
+}
+
+Table seller_profiles as S {
+  username varchar [pk, ref: > U.username, not null]
+  shop_name varchar
+  license_number varchar
+  shop_address varchar
+  phone_number varchar
+}
