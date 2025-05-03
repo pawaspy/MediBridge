@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Expiring Soon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .medicine-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .important {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .suggestion {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-left: 3px solid #3498db;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Medicine Inventory Alert</h2>
+    </div>
+    <div class="content">
+        <p>Dear <strong>{{.SellerName}}</strong>,</p>
+        
+        <p>This is a courtesy notification from MediBridge System regarding a medicine in your inventory that will be expiring soon.</p>
+        
+        <div class="medicine-info">
+            <p><strong>Medicine Name:</strong> {{.MedicineName}}</p>
+            <p><strong>Medicine ID:</strong> {{.MedicineID}}</p>
+            <p><strong>Current Price:</strong> {{.Price}}</p>
+            <p><strong>Current Quantity:</strong> {{.Quantity}}</p>
+            <p class="important"><strong>Expiry Date:</strong> {{.ExpiryDate}}</p>
+            <p><strong>Days Until Expiry:</strong> {{.DaysUntilExpiry}} days</p>
+        </div>
+        
+        <p>The medicine listed above will expire in <strong>{{.DaysUntilExpiry}} days</strong>. We recommend taking action to minimize potential losses.</p>
+        
+        <div class="suggestion">
+            <p><strong>Suggestion:</strong> Consider applying a discount to increase sales before the expiration date. You can update the medicine details through your seller dashboard.</p>
+        </div>
+        
+        <p>Thank you for your attention to this matter.</p>
+        
+        <p>Best regards,<br>
+        MediBridge System</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message. Please do not reply to this email.</p>
+        <p>© 2023 MediBridge. All rights reserved.</p>
+    </div>
+</body>
+</html> 

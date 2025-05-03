@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Expired</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .medicine-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .expired {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .notice {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-left: 3px solid #fd7e14;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Urgent: Medicine Expired</h2>
+    </div>
+    <div class="content">
+        <p>Dear <strong>{{.SellerName}}</strong>,</p>
+        
+        <p>This is an <strong>urgent notification</strong> from MediBridge System regarding a medicine in your inventory that has expired.</p>
+        
+        <div class="medicine-info">
+            <p><strong>Medicine Name:</strong> {{.MedicineName}}</p>
+            <p><strong>Medicine ID:</strong> {{.MedicineID}}</p>
+            <p><strong>Current Quantity:</strong> {{.Quantity}}</p>
+            <p class="expired"><strong>Expiry Date:</strong> {{.ExpiryDate}} (EXPIRED)</p>
+            <p><strong>Days Since Expiry:</strong> {{.DaysSinceExpiry}} days</p>
+        </div>
+        
+        <div class="notice">
+            <p><strong>Important:</strong> The medicine listed above has expired and has been automatically removed from the active inventory. Selling expired medications is illegal and poses serious health risks to patients.</p>
+        </div>
+        
+        <p>Please ensure proper disposal of the expired medicine according to local regulations. If you believe this is an error, please contact our support team immediately.</p>
+        
+        <p>Thank you for your prompt attention to this matter.</p>
+        
+        <p>Best regards,<br>
+        MediBridge System</p>
+    </div>
+    <div class="footer">
+        <p>This is an automated message. Please do not reply to this email.</p>
+        <p>© 2023 MediBridge. All rights reserved.</p>
+    </div>
+</body>
+</html> 
