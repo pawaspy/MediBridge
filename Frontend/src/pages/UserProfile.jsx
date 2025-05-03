@@ -13,13 +13,21 @@ import {
 // MainNavbar (copied for consistency)
 const MainNavbar = ({ username, handleSignOut, userRole }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <nav className="sticky top-0 w-full bg-[#121212]/90 border-b border-gray-800/50 py-6 backdrop-blur-lg z-[9999]" style={{background: '#121212'}}>
       <div className="max-w-[1440px] mx-auto px-8 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer">
+        <div className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer" onClick={() => navigate('/main')}>
           <img 
             src={logo}
             alt="MediBridge" 
@@ -29,26 +37,33 @@ const MainNavbar = ({ username, handleSignOut, userRole }) => {
         {/* Amazon-style Search Bar */}
         <div className="flex-1 flex justify-center max-w-3xl px-4">
           <div className="w-full max-w-[800px]">
-            <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00D37F]' : ''}`}> 
-              <div className="flex">
-                <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00D37F]/20 transition-colors">
-                  <option>All</option>
-                  <option>Medicines</option>
-                  <option>Healthcare</option>
-                  <option>Wellness</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Search medicines and health essentials"
-                  className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                />
-                <button className="bg-[#2a2a2a]/50 hover:bg-[#00D37F]/20 px-6 flex items-center justify-center transition-colors">
-                  <FaSearch className="text-[#00D37F] text-xl" />
-                </button>
+            <form onSubmit={handleSearchSubmit}>
+              <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00D37F]' : ''}`}> 
+                <div className="flex">
+                  <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00D37F]/20 transition-colors">
+                    <option>All</option>
+                    <option>Medicines</option>
+                    <option>Healthcare</option>
+                    <option>Wellness</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search medicines and health essentials"
+                    className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                  />
+                  <button 
+                    type="submit"
+                    className="bg-[#2a2a2a]/50 hover:bg-[#00D37F]/20 px-6 flex items-center justify-center transition-colors"
+                  >
+                    <FaSearch className="text-[#00D37F] text-xl" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
         {/* Interactive Profile & Cart Buttons */}
@@ -286,8 +301,14 @@ export default function UserProfile() {
                       <div><span className="font-semibold text-[#00FFAB]">Email:</span> {email}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.age || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.gender || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Date of Birth:</span> {userData.dob || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Address:</span> {userData.address || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">City:</span> {userData.city || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">State:</span> {userData.state || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">PIN Code:</span> {userData.pincode || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Emergency Contact:</span> {userData.emergencyContact || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Relation to Emergency Contact:</span> {userData.emergencyRelation || 'Not specified'}</div>
                     </div>
                   </div>
                 )}
@@ -295,21 +316,81 @@ export default function UserProfile() {
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Medical Info</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
-                      <div><span className="font-semibold text-[#00FFAB]">Disease:</span> {userData.disease}</div>
-                      <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {userData.bloodGroup}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Disease:</span> {userData.disease || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Blood Group:</span> {userData.bloodGroup || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Allergies:</span> {userData.allergies || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Height:</span> {userData.height || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Weight:</span> {userData.weight || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Chronic Conditions:</span> {userData.chronicConditions || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Previous Surgeries:</span> {userData.previousSurgeries || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Family History:</span> {userData.familyHistory || 'Not specified'}</div>
                     </div>
                   </div>
                 )}
                 {activeSection === 'prescriptions' && (
                   <div>
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Prescribed Medicines</h3>
-                    <ul className="flex flex-col gap-4 text-lg text-white">
-                      {userData.prescribedMedicines?.map((med, idx) => (
-                        <li key={idx} className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
-                          <span className="font-semibold text-[#00FFAB]">{med.name}</span> - {med.dosage} &middot; {med.frequency}
-                        </li>
-                      ))}
-                    </ul>
+                    
+                    {userData.prescribedMedicines && userData.prescribedMedicines.length > 0 ? (
+                      <ul className="flex flex-col gap-4 text-lg text-white">
+                        {userData.prescribedMedicines.map((med, idx) => (
+                          <li key={idx} className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
+                            <div className="flex flex-col gap-2">
+                              <h4 className="text-xl font-semibold text-[#00FFAB]">{med.name}</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-2">
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Dosage:</span> {med.dosage}
+                                </div>
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Frequency:</span> {med.frequency}
+                                </div>
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Duration:</span> {med.duration || 'As needed'}
+                                </div>
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Instructions:</span> {med.instructions || 'Take as directed'}
+                                </div>
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Prescribed By:</span> {med.prescribedBy || 'Doctor'}
+                                </div>
+                                <div className="text-sm text-gray-300">
+                                  <span className="font-medium text-white">Date:</span> {med.prescriptionDate || 'Not specified'}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="bg-[#121212]/60 rounded-lg p-6 text-center">
+                        <p className="text-gray-400">No prescribed medicines found.</p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-8">
+                      <h4 className="text-xl font-bold text-[#00FFAB] mb-4">Medical Documents</h4>
+                      {userData.medicalDocuments && userData.medicalDocuments.length > 0 ? (
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {userData.medicalDocuments.map((doc, idx) => (
+                            <li key={idx} className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1">
+                                  <p className="font-medium text-white">{doc.name}</p>
+                                  <p className="text-sm text-gray-400">Uploaded on: {doc.uploadDate || 'Not specified'}</p>
+                                </div>
+                                <button className="bg-[#00FFAB]/20 text-[#00FFAB] px-3 py-1 rounded-lg text-sm">
+                                  View
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="bg-[#121212]/60 rounded-lg p-6 text-center">
+                          <p className="text-gray-400">No medical documents found.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
@@ -328,6 +409,7 @@ export default function UserProfile() {
                       <div><span className="font-semibold text-[#00FFAB]">Specialization:</span> {userData.specialization || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Age:</span> {userData.doctorAge || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Gender:</span> {userData.doctorGender || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Mobile Number:</span> {userData.mobile || 'Not specified'}</div>
                     </div>
                   </div>
                 )}
@@ -337,6 +419,10 @@ export default function UserProfile() {
                     <div className="flex flex-col gap-4 text-lg text-white">
                       <div><span className="font-semibold text-[#00FFAB]">Registration Number:</span> {userData.registrationNumber || 'Not specified'}</div>
                       <div><span className="font-semibold text-[#00FFAB]">Experience:</span> {userData.experience || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Degrees:</span> {userData.degrees || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Medical School:</span> {userData.medicalSchool || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Graduation Year:</span> {userData.graduationYear || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Certifications:</span> {userData.certifications || 'Not specified'}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Credentials</p>
                         <p className="text-gray-300">
@@ -358,11 +444,14 @@ export default function UserProfile() {
                     <h3 className="text-3xl font-bold text-[#00FFAB] mb-6">Practice Details</h3>
                     <div className="flex flex-col gap-4 text-lg text-white">
                       <div><span className="font-semibold text-[#00FFAB]">Hospital/Clinic:</span> {userData.hospitalName || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Hospital Address:</span> {userData.hospitalAddress || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Appointment Fee:</span> ₹{userData.appointmentFee || 'Not specified'}</div>
+                      <div><span className="font-semibold text-[#00FFAB]">Languages Spoken:</span> {userData.languages || 'Not specified'}</div>
                       <div className="bg-[#121212]/60 rounded-lg p-4 border border-[#00FFAB]/10 mt-2">
                         <p className="font-semibold text-[#00FFAB] mb-2">Consultation Hours</p>
-                        <p className="text-gray-300">Monday - Friday: 10:00 AM - 5:00 PM</p>
-                        <p className="text-gray-300">Saturday: 10:00 AM - 1:00 PM</p>
-                        <p className="text-gray-300">Sunday: Closed</p>
+                        <p className="text-gray-300">Monday - Friday: {userData.weekdayHours || '10:00 AM - 5:00 PM'}</p>
+                        <p className="text-gray-300">Saturday: {userData.saturdayHours || '10:00 AM - 1:00 PM'}</p>
+                        <p className="text-gray-300">Sunday: {userData.sundayHours || 'Closed'}</p>
                       </div>
                     </div>
                   </div>

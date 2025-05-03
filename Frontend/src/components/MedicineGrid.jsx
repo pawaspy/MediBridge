@@ -80,7 +80,7 @@ const MedicineCard = ({ medicine, isBestSeller = false }) => {
         </div>
 
         <button
-          className="mt-4 w-full py-2 px-4 bg-[#00D37F]/20 text-[#00D37F] font-medium rounded-lg hover:bg-[#00D37F]/30 transition-colors"
+          className="mt-4 w-full py-2 px-4 bg-[#00FFAB] text-black font-medium rounded-lg hover:bg-[#00D37F] transition-colors"
           onClick={handleAddToCart}
         >
           Add to Cart

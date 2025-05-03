@@ -9,45 +9,63 @@ import {
   FaEdit, FaTrash, FaFilter, FaSortAmountDown, FaSortAmountUp
 } from 'react-icons/fa';
 
-// MainNavbar component (copied for consistency)
-const MainNavbar = ({ username, handleSignOut }) => {
+// Navbar component with advanced search integration
+const Navbar = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <nav className="sticky top-0 w-full bg-[#121212]/90 border-b border-gray-800/50 py-6 backdrop-blur-lg z-[9999]" style={{ background: '#121212' }}>
       <div className="max-w-[1440px] mx-auto px-8 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer">
-          <img
+        <div 
+          className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
+          onClick={() => navigate('/main')}
+        >
+          <img 
             src={logo}
-            alt="MediBridge"
+            alt="MediBridge" 
             className="h-14 w-auto"
           />
         </div>
         {/* Search Bar */}
         <div className="flex-1 flex justify-center max-w-3xl px-4">
           <div className="w-full max-w-[800px]">
-            <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00D37F]' : ''}`}>
-              <div className="flex">
-                <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00D37F]/20 transition-colors">
-                  <option>All</option>
-                  <option>Medicines</option>
-                  <option>Healthcare</option>
-                  <option>Wellness</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Search medicines and health essentials"
-                  className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                />
-                <button className="bg-[#2a2a2a]/50 hover:bg-[#00D37F]/20 px-6 flex items-center justify-center transition-colors">
-                  <FaSearch className="text-[#00D37F] text-xl" />
-                </button>
+            <form onSubmit={handleSearchSubmit}>
+              <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00FFAB]' : ''}`}> 
+                <div className="flex">
+                  <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00FFAB]/20 transition-colors">
+                    <option>All</option>
+                    <option>Medicines</option>
+                    <option>Healthcare</option>
+                    <option>Wellness</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search medicines and health essentials"
+                    className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                  />
+                  <button 
+                    type="submit"
+                    className="bg-[#2a2a2a]/50 hover:bg-[#00FFAB]/20 px-6 flex items-center justify-center transition-colors"
+                  >
+                    <FaSearch className="text-[#00FFAB] text-xl" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
         {/* Profile Button */}
@@ -266,7 +284,7 @@ export default function SellerDashboard() {
       </div>
 
       {/* Main Navbar */}
-      <MainNavbar username={username} handleSignOut={handleSignOut} />
+      <Navbar />
 
       {/* Content with Sidebar */}
       <div className="relative z-10 flex pt-8">

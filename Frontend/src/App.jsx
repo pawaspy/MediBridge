@@ -12,6 +12,7 @@ import Healia from './pages/Healia'
 import UserProfile from './pages/UserProfile'
 import PatientProfile from './pages/PatientProfile'
 import SellerDashboard from './pages/SellerDashboard'
+import SearchResults from './pages/SearchResults'
 
 // Check authentication for protected routes
 const ProtectedRoute = ({ children }) => {
@@ -69,6 +70,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CategoryView />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/search",
+        element: (
+          <ProtectedRoute>
+            <SearchResults />
           </ProtectedRoute>
         ),
       },

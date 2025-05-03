@@ -50,7 +50,8 @@ export default function Register() {
     age: '',
     gender: '',
     address: '',
-    emergencyContact: ''
+    emergencyContact: '',
+    emergencyRelation: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -82,12 +83,27 @@ export default function Register() {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
+    if (!formData.username) newErrors.username = 'Username is required';
 
     // Role-specific validations
+    if (role === 'doctor') {
+      if (!formData.specialization) newErrors.specialization = 'Specialization is required';
+      if (!formData.registrationNumber) newErrors.registrationNumber = 'Registration number is required';
+      if (!formData.doctorAge) newErrors.doctorAge = 'Age is required';
+      if (!formData.doctorGender) newErrors.doctorGender = 'Gender is required';
+      if (!formData.hospitalName) newErrors.hospitalName = 'Hospital name is required';
+      if (!formData.experience) newErrors.experience = 'Years of experience is required';
+    }
+
+    if (role === 'patient') {
+      if (!formData.age) newErrors.age = 'Age is required';
+      if (!formData.gender) newErrors.gender = 'Gender is required';
+      if (!formData.address) newErrors.address = 'Address is required';
+      if (!formData.emergencyContact) newErrors.emergencyContact = 'Emergency contact is required';
+    }
+
     if (role === 'seller') {
-      if (!formData.username) newErrors.username = 'Username is required';
-      // Make sellerType validation less strict for debugging
-      // Remove strict validations temporarily to test redirection
+      // Keep the original seller validations
     }
 
     setErrors(newErrors);
@@ -192,6 +208,19 @@ export default function Register() {
                 {/* Common Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
+                    <label className="block text-[#00FFB2] mb-2">Username</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                      placeholder="Enter your username"
+                    />
+                    {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+                  </div>
+                  
+                  <div>
                     <label className="block text-[#00FFB2] mb-2">Full Name</label>
                     <input
                       type="text"
@@ -278,18 +307,6 @@ export default function Register() {
                 {role === 'doctor' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[#00FFB2] mb-2">Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
-                        placeholder="Enter your username"
-                      />
-                      {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
-                    </div>
-                    <div>
                       <label className="block text-[#00FFB2] mb-2">Specialization</label>
                       <input
                         type="text"
@@ -301,28 +318,193 @@ export default function Register() {
                       />
                       {errors.specialization && <p className="text-red-500 text-sm mt-1">{errors.specialization}</p>}
                     </div>
-
-                    {/* Other doctor fields remain the same */}
-                    {/* ... */}
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Registration Number</label>
+                      <input
+                        type="text"
+                        name="registrationNumber"
+                        value={formData.registrationNumber}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter your registration number"
+                      />
+                      {errors.registrationNumber && <p className="text-red-500 text-sm mt-1">{errors.registrationNumber}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Age</label>
+                      <input
+                        type="number"
+                        name="doctorAge"
+                        value={formData.doctorAge}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter your age"
+                        min="0"
+                      />
+                      {errors.doctorAge && <p className="text-red-500 text-sm mt-1">{errors.doctorAge}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Gender</label>
+                      <select
+                        name="doctorGender"
+                        value={formData.doctorGender}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white"
+                      >
+                        <option value="" className="bg-[#101820] text-black">Select gender</option>
+                        <option value="male" className="bg-[#101820] text-black">Male</option>
+                        <option value="female" className="bg-[#101820] text-black">Female</option>
+                        <option value="other" className="bg-[#101820] text-black">Other</option>
+                      </select>
+                      {errors.doctorGender && <p className="text-red-500 text-sm mt-1">{errors.doctorGender}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Hospital/Clinic Name</label>
+                      <input
+                        type="text"
+                        name="hospitalName"
+                        value={formData.hospitalName}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter hospital/clinic name"
+                      />
+                      {errors.hospitalName && <p className="text-red-500 text-sm mt-1">{errors.hospitalName}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Years of Experience</label>
+                      <input
+                        type="number"
+                        name="experience"
+                        value={formData.experience}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter years of experience"
+                        min="0"
+                      />
+                      {errors.experience && <p className="text-red-500 text-sm mt-1">{errors.experience}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Degree Certificate</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          name="degreeCertificate"
+                          onChange={handleInputChange}
+                          className="hidden"
+                          id="degreeCertificateInput"
+                        />
+                        <label
+                          htmlFor="degreeCertificateInput"
+                          className="flex-1 flex items-center justify-center gap-2 bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white cursor-pointer hover:bg-[#00FFB2]/20"
+                        >
+                          <FaUpload /> 
+                          <span>{formData.degreeCertificate ? formData.degreeCertificate.name : "Upload Certificate"}</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Seller Fields */}
-                {role === 'seller' && (
+                {/* Patient Fields */}
+                {role === 'patient' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[#00FFB2] mb-2">Username</label>
+                      <label className="block text-[#00FFB2] mb-2">Age</label>
                       <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
+                        type="number"
+                        name="age"
+                        value={formData.age}
                         onChange={handleInputChange}
                         className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
-                        placeholder="Enter your username"
+                        placeholder="Enter your age"
+                        min="0"
                       />
-                      {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+                      {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
                     </div>
                     
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Gender</label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white"
+                      >
+                        <option value="" className="bg-[#101820] text-black">Select gender</option>
+                        <option value="male" className="bg-[#101820] text-black">Male</option>
+                        <option value="female" className="bg-[#101820] text-black">Female</option>
+                        <option value="other" className="bg-[#101820] text-black">Other</option>
+                      </select>
+                      {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label className="block text-[#00FFB2] mb-2">Address</label>
+                      <textarea
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        rows="3"
+                        placeholder="Enter your address"
+                      />
+                      {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Emergency Contact Number</label>
+                      <div className="flex gap-2">
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-2 py-2 text-white w-24"
+                        >
+                          {countryCodes.map((country) => (
+                            <option 
+                              key={country.code} 
+                              value={country.code}
+                              className="bg-[#101820] text-black"
+                            >
+                              {country.code}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          name="emergencyContact"
+                          value={formData.emergencyContact}
+                          onChange={handleInputChange}
+                          className="flex-1 bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                          placeholder="Enter emergency contact number"
+                        />
+                      </div>
+                      {errors.emergencyContact && <p className="text-red-500 text-sm mt-1">{errors.emergencyContact}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[#00FFB2] mb-2">Relation to Emergency Contact</label>
+                      <input
+                        type="text"
+                        name="emergencyRelation"
+                        value={formData.emergencyRelation}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="e.g. Parent, Spouse, Sibling"
+                      />
+                      {errors.emergencyRelation && <p className="text-red-500 text-sm mt-1">{errors.emergencyRelation}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Seller Fields - Keeping them as they were */}
+                {role === 'seller' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">                    
                     <div>
                       <label className="block text-[#00FFB2] mb-2">Store Name</label>
                       <input
@@ -391,27 +573,6 @@ export default function Register() {
                       />
                       {errors.storeAddress && <p className="text-red-500 text-sm mt-1">{errors.storeAddress}</p>}
                     </div>
-                  </div>
-                )}
-
-                {/* Patient Fields */}
-                {role === 'patient' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[#00FFB2] mb-2">Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        className="w-full bg-[#00FFB2]/10 border border-[#00FFB2]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
-                        placeholder="Enter your username"
-                      />
-                      {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
-                    </div>
-                    
-                    {/* Other patient fields remain the same */}
-                    {/* ... */}
                   </div>
                 )}
 
