@@ -10,7 +10,7 @@ import {
 } from 'react-icons/fa';
 
 // Navbar component with advanced search integration
-const Navbar = () => {
+const Navbar = ({ username, handleSignOut }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -284,7 +284,7 @@ export default function SellerDashboard() {
       </div>
 
       {/* Main Navbar */}
-      <Navbar />
+      <Navbar username={username} handleSignOut={handleSignOut} />
 
       {/* Content with Sidebar */}
       <div className="relative z-10 flex pt-8">
