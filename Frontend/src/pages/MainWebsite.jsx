@@ -8,24 +8,23 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
 // Rename Navbar to MainNavbar
-const MainNavbar = ({ username, handleSignOut }) => {
+const MainNavbar = ({ username, handleSignOut, userRole }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [userRole, setUserRole] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      const { role } = JSON.parse(userData);
-      setUserRole(role);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
-  }, []);
+  };
 
   return (
     <nav className="sticky top-0 w-full bg-[#121212]/90 border-b border-gray-800/50 py-6 backdrop-blur-lg z-[9999]" style={{background: '#121212'}}>
       <div className="max-w-[1440px] mx-auto px-8 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer">
+        <div className="flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer" onClick={() => navigate('/main')}>
           <img 
             src={logo}
             alt="MediBridge" 
@@ -35,26 +34,33 @@ const MainNavbar = ({ username, handleSignOut }) => {
         {/* Amazon-style Search Bar */}
         <div className="flex-1 flex justify-center max-w-3xl px-4">
           <div className="w-full max-w-[800px]">
-            <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00D37F]' : ''}`}> 
-              <div className="flex">
-                <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00D37F]/20 transition-colors">
-                  <option>All</option>
-                  <option>Medicines</option>
-                  <option>Healthcare</option>
-                  <option>Wellness</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Search medicines and health essentials"
-                  className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                />
-                <button className="bg-[#2a2a2a]/50 hover:bg-[#00D37F]/20 px-6 flex items-center justify-center transition-colors">
-                  <FaSearch className="text-[#00D37F] text-xl" />
-                </button>
+            <form onSubmit={handleSearchSubmit}>
+              <div className={`relative rounded-lg overflow-hidden transition-all duration-200 ${isSearchFocused ? 'ring-2 ring-[#00D37F]' : ''}`}> 
+                <div className="flex">
+                  <select className="bg-[#2a2a2a]/50 text-white px-3 py-2.5 border-r border-gray-700/50 focus:outline-none cursor-pointer hover:bg-[#00D37F]/20 transition-colors">
+                    <option>All</option>
+                    <option>Medicines</option>
+                    <option>Healthcare</option>
+                    <option>Wellness</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search medicines and health essentials"
+                    className="w-full bg-[#2a2a2a]/50 text-white py-2.5 px-4 focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                  />
+                  <button 
+                    type="submit"
+                    className="bg-[#2a2a2a]/50 hover:bg-[#00D37F]/20 px-6 flex items-center justify-center transition-colors"
+                  >
+                    <FaSearch className="text-[#00D37F] text-xl" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
         {/* Interactive Profile & Cart Buttons */}
@@ -372,7 +378,7 @@ const MedicineCard = ({ id, name, description, price, originalPrice, discount, e
           <span className="text-sm text-gray-400 line-through">₹{originalPrice}</span>
           <span className="text-[#00D37F] text-sm font-semibold">{discount}% off</span>
         </div>
-        <button className="w-full py-2 bg-[#00FFB2] hover:bg-[#00D37F] text-black font-semibold rounded-lg transition-colors" onClick={handleAddToCart}>
+        <button className="w-full py-2 bg-[#00FFAB] hover:bg-[#00D37F] text-[#00D37F] font-semibold rounded-lg transition-colors" onClick={handleAddToCart}>
           Add to Cart
         </button>
       </div>
@@ -454,6 +460,7 @@ const Footer = () => (
 const MainWebsite = () => {
   console.log('MainWebsite rendered');
   const [username, setUsername] = useState('');
+  const [userRole, setUserRole] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -461,6 +468,7 @@ const MainWebsite = () => {
     if (userData) {
       const parsedData = JSON.parse(userData);
       setUsername(parsedData.username);
+      setUserRole(parsedData.role);
       // No redirection based on role - all users should stay on the main page
     }
   }, [navigate]);
@@ -468,6 +476,7 @@ const MainWebsite = () => {
   const handleSignOut = async () => {
     localStorage.removeItem('userData');
     setUsername('');
+    setUserRole('');
     await new Promise(resolve => setTimeout(resolve, 100));
     window.location.href = '/';
   };
@@ -785,7 +794,7 @@ const MainWebsite = () => {
         />
       </div>
 
-      <MainNavbar username={username} handleSignOut={handleSignOut} />
+      <MainNavbar username={username} handleSignOut={handleSignOut} userRole={userRole} />
 
       <Carousel />
 
