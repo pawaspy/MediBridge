@@ -13,6 +13,7 @@ import UserProfile from './pages/UserProfile'
 import PatientProfile from './pages/PatientProfile'
 import SellerDashboard from './pages/SellerDashboard'
 import SearchResults from './pages/SearchResults'
+import ProductDetail from './pages/ProductDetail'
 
 // Check authentication for protected routes
 const ProtectedRoute = ({ children }) => {
@@ -78,6 +79,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SearchResults />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/product/:id",
+        element: (
+          <ProtectedRoute>
+            <ProductDetail />
           </ProtectedRoute>
         ),
       },
