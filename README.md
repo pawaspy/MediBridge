@@ -1,6 +1,108 @@
-# MediBridge
+# MediBridge - Healthcare Platform
 
-MediBridge is a comprehensive medical inventory and healthcare management system designed to connect patients, doctors, and medicine sellers in a unified platform.
+MediBridge is a comprehensive healthcare platform that connects patients, doctors, and medical suppliers in one integrated ecosystem. The platform includes various features like medicine ordering, doctor consultations, and an AI-powered medical assistant called Healia.
+
+## Components
+
+The project consists of two main components:
+
+1. **Frontend** - React-based user interface
+2. **MediBridge AI** - Node.js backend for the Healia AI assistant
+
+## Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- Go language runtime (for the main backend)
+
+## Setup Instructions
+
+### 1. Frontend Setup
+
+Navigate to the Frontend directory:
+
+```bash
+cd Frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The frontend should now be running at http://localhost:5173
+
+### 2. MediBridge AI Setup
+
+Navigate to the MediBridge AI directory:
+
+```bash
+cd medibridge-ai
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a `.env` file in the `medibridge-ai` root directory with the following content:
+
+```
+PORT=3000
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+Replace `your_openai_api_key_here` with your actual OpenAI API key.
+
+Start the AI server:
+
+```bash
+npm run dev
+```
+
+The AI server should now be running at http://localhost:3000
+
+## Using Healia AI
+
+Once both the frontend and AI server are running:
+
+1. Navigate to the MediBridge homepage
+2. Click on the "Healia AI" button in the navigation bar
+3. You can now interact with the AI assistant by typing questions about medical symptoms, first aid, and health advice
+
+## Features
+
+- **Real-time communication**: Uses Socket.IO for real-time chat with the AI
+- **Fallback to REST API**: Automatically falls back to REST API if WebSocket connection is unavailable
+- **Medical knowledge base**: Includes first aid information and common condition advice
+- **OpenAI integration**: Uses GPT-3.5 for complex medical queries
+
+## Technical Architecture
+
+- **Frontend**: React, TailwindCSS, Three.js for 3D backgrounds
+- **AI Backend**: Express.js, Socket.IO, OpenAI API
+- **Communication**: WebSockets (primary) with REST API fallback
+
+## Troubleshooting
+
+If you encounter connection issues with the AI:
+
+1. Ensure both servers are running
+2. Check that the port (3000) is not being used by another application
+3. Verify that your OpenAI API key is valid and has sufficient credits
+4. Check the browser console and server logs for any error messages
+
+## License
+
+MIT
 
 ## Overview
 

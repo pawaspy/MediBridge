@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -86,29 +88,65 @@ func (server *Server) GetSeller(c *gin.Context) {
 }
 
 func (server *Server) CreateSeller(c *gin.Context) {
+	// Read and log raw request body for debugging
+	rawBody, err := c.GetRawData()
+	if err != nil {
+		util.LogError("Failed to read raw request body: %v", err)
+		c.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("failed to read request body: %v", err)))
+		return
+	}
+
+	// Log the raw request for debugging
+	util.LogInfo("Raw seller registration request: %s", string(rawBody))
+
+	// Convert the raw request body back to io.ReadCloser for ShouldBindJSON
+	c.Request.Body = NewReadCloser(rawBody)
+
 	var req CreateSellerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		err := errors.New("invalid request body")
+		util.LogError("Invalid seller registration request body: %v", err)
+		c.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid request body: %v", err)))
+		return
+	}
+
+	// Log the received request for debugging
+	util.LogInfo("Received seller registration request for username: %s", req.Username)
+	util.LogInfo("Seller registration request details: %+v", req)
+
+	// Extensive validation
+	if req.Username == "" {
+		err := errors.New("username is required and cannot be empty")
+		util.LogError("%v", err)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if req.Email == "" {
+		err := errors.New("email is required and cannot be empty")
+		util.LogError("%v", err)
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	if !util.IsValidPhoneNumber(req.MobileNumber) {
 		err := errors.New("phone number must be exactly 10 digits")
+		util.LogWarning("Invalid phone number format: %s", req.MobileNumber)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	if !util.IsValidSellerType(req.SellerType) {
-		err := errors.New("invalid seller type provided")
+		util.LogWarning("Invalid seller type: %s", req.SellerType)
+		validTypes := []string{util.RetailSeller, util.WholesaleSeller, util.HospitalSeller, util.NGOSeller}
+		err := fmt.Errorf("invalid seller type provided: %s. Valid types are: %v", req.SellerType, validTypes)
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	hashPass, err := util.HashPassword(req.Password)
 	if err != nil {
-		err := errors.New("failed to hash password")
-		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		util.LogError("Failed to hash password for user %s: %v", req.Username, err)
+		c.JSON(http.StatusInternalServerError, errorResponse(errors.New("failed to hash password")))
 		return
 	}
 
@@ -125,13 +163,68 @@ func (server *Server) CreateSeller(c *gin.Context) {
 		StoreAddress:      req.StoreAddress,
 	}
 
-	seller, err := server.store.CreateSeller(c, arg)
-	if err != nil {
-		err := errors.New("failed to create seller")
-		c.JSON(http.StatusInternalServerError, errorResponse(err))
+	// Log the final parameters being sent to the database
+	util.LogInfo("Attempting to create seller with params: %+v", arg)
+
+	// Check if user with this username already exists
+	_, userErr := server.store.GetSellerByName(c, req.Username)
+	if userErr == nil {
+		// No error means user was found, so it's a duplicate
+		err := fmt.Errorf("seller with username %s already exists", req.Username)
+		util.LogWarning("%v", err)
+		c.JSON(http.StatusConflict, errorResponse(err))
 		return
 	}
+
+	// Check if email is already in use by listing all sellers and checking emails
+	sellers, err := server.store.ListSellersByStoreName(c, db.ListSellersByStoreNameParams{
+		StoreName: pgtype.Text{String: "", Valid: true}, // Empty to get all sellers
+		Limit:     100,
+		Offset:    0,
+	})
+	if err == nil {
+		for _, seller := range sellers {
+			if seller.Email == req.Email {
+				err := fmt.Errorf("email %s is already registered", req.Email)
+				util.LogWarning("%v", err)
+				c.JSON(http.StatusConflict, errorResponse(err))
+				return
+			}
+		}
+	}
+
+	// Try to create the seller
+	seller, err := server.store.CreateSeller(c, arg)
+	if err != nil {
+		util.LogError("Database error creating seller %s: %v", req.Username, err)
+		// Use the new error formatter for better error details
+		formattedError := util.FormatDBError(err)
+		c.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("failed to create seller: %s", formattedError)))
+		return
+	}
+
+	util.LogInfo("Successfully created seller: %s", req.Username)
 	c.JSON(http.StatusOK, newSellerResponse(seller))
+}
+
+// NewReadCloser creates a new io.ReadCloser from byte slice
+func NewReadCloser(body []byte) *BodyReadCloser {
+	return &BodyReadCloser{bytes.NewReader(body)}
+}
+
+// BodyReadCloser implements io.ReadCloser
+type BodyReadCloser struct {
+	reader *bytes.Reader
+}
+
+// Read implements io.Reader
+func (brc *BodyReadCloser) Read(p []byte) (n int, err error) {
+	return brc.reader.Read(p)
+}
+
+// Close implements io.Closer
+func (brc *BodyReadCloser) Close() error {
+	return nil
 }
 
 func (server *Server) UpdateSeller(c *gin.Context) {
@@ -309,7 +402,7 @@ type loginSellerResponse struct {
 	Seller               sellerResponse `json:"seller"`
 }
 
-func (server *Server) loginSeller(ctx *gin.Context) {
+func (server *Server) LoginSeller(ctx *gin.Context) {
 	var req loginSellerRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -368,8 +461,8 @@ func (server *Server) ListSellersByStoreName(c *gin.Context) {
 			String: req.StoreName,
 			Valid:  true,
 		},
-		Limit:     req.PageSize,
-		Offset:    (req.PageID - 1) * req.PageSize,
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
 	}
 
 	sellers, err := server.store.ListSellersByStoreName(c, arg)

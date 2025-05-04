@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -285,12 +286,83 @@ type loginUserResponse struct {
 	User                 userResponse `json:"user"`
 }
 
-func (server *Server) loginPatient(ctx *gin.Context) {
-	var req loginUserRequest
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+// ResetPasswordRequest represents the request to reset a patient's password
+type ResetPasswordRequest struct {
+	Username    string `json:"username" binding:"required,alphanum"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+// ResetPatientPassword resets a patient's password (for testing only)
+func (server *Server) ResetPatientPassword(ctx *gin.Context) {
+	var req ResetPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
+	// Get the patient
+	patient, err := server.store.GetPatientByName(ctx, req.Username)
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			err := errors.New("no patient found")
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// Hash the new password
+	hashPass, err := util.HashPassword(req.NewPassword)
+	if err != nil {
+		err := errors.New("failed to hash password")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// Update only the password
+	arg := db.UpdatePatientParams{
+		Username: req.Username,
+		Password: pgtype.Text{
+			String: hashPass,
+			Valid:  true,
+		},
+		PasswordChangedAt: pgtype.Timestamp{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	}
+
+	// Set other fields to not be updated
+	arg.FullName = pgtype.Text{Valid: false}
+	arg.MobileNumber = pgtype.Text{Valid: false}
+	arg.Age = pgtype.Int4{Valid: false}
+	arg.Address = pgtype.Text{Valid: false}
+	arg.EmergencyContact = pgtype.Text{Valid: false}
+
+	// Update the patient
+	patient, err = server.store.UpdatePatient(ctx, arg)
+	if err != nil {
+		err := errors.New("failed to update patient password")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":  "password reset successful",
+		"username": patient.Username,
+	})
+}
+
+func (server *Server) LoginPatient(ctx *gin.Context) {
+	var req loginUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// Log the username being checked
+	fmt.Printf("Attempting login for username: %s\n", req.Username)
 
 	patient, err := server.store.GetPatientByName(ctx, req.Username)
 	if err != nil {
@@ -303,11 +375,20 @@ func (server *Server) loginPatient(ctx *gin.Context) {
 		return
 	}
 
-	if err := util.CheckPassword(req.Password, patient.Password); err != nil {
+	// Log that the patient was found
+	fmt.Printf("Patient found: %s\n", patient.Username)
+
+	// Check password
+	passErr := util.CheckPassword(req.Password, patient.Password)
+	if passErr != nil {
+		fmt.Printf("Password verification failed: %v\n", passErr)
 		err := errors.New("invalid password field")
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
+
+	// Log successful password verification
+	fmt.Println("Password verification successful")
 
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(patient.Username, util.Patient, server.config.TokenDuration)
 

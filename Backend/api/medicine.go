@@ -69,10 +69,15 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 
 	var req CreateMedicineRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		util.LogError("Failed to bind JSON: %v", err)
 		err = errors.New("failed to bind JSON")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
+	// Log the request data for debugging
+	util.LogInfo("Creating medicine with data: %+v", req)
+	util.LogInfo("Auth payload: %+v", authPayload)
 
 	if req.Quantity < 0 {
 		err := errors.New("quantity cannot be negative")
@@ -93,6 +98,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 	}
 
 	if req.Seller == "" || req.Seller != authPayload.Username {
+		util.LogError("Invalid seller: req.Seller=%s, authPayload.Username=%s", req.Seller, authPayload.Username)
 		err := errors.New("invalid seller username")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -101,7 +107,8 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 	// Check if the seller exists
 	seller, err := server.store.GetSellerByName(c, req.Seller)
 	if err != nil {
-		if err == db.ErrRecordNotFound {
+		util.LogError("Failed to get seller: %v", err)
+		if errors.Is(err, db.ErrRecordNotFound) {
 			err := errors.New("seller not found")
 			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
@@ -109,15 +116,19 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+
 	if seller.Username != req.Seller {
+		util.LogError("Seller username mismatch: seller.Username=%s, req.Seller=%s", seller.Username, req.Seller)
 		err := errors.New("invalid seller username")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+
 	// Check if the medicine already exists
 	medicine, err := server.store.GetMedicineByName(c, req.Name)
 	if err != nil {
 		if err != db.ErrRecordNotFound {
+			util.LogError("Failed to check existing medicine: %v", err)
 			c.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
 		}
@@ -132,6 +143,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 		}
 		medicine, err = server.store.UpdateMedicine(c, arg)
 		if err != nil {
+			util.LogError("Failed to update existing medicine: %v", err)
 			err := errors.New("failed to update medicine")
 			c.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
@@ -143,6 +155,7 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 	// Convert the expiry date to the correct format
 	expiryDate, err := time.Parse("2006-01-02", req.ExpiryDate)
 	if err != nil {
+		util.LogError("Invalid expiry date format: %s, error: %v", req.ExpiryDate, err)
 		err := errors.New("invalid expiry date format")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -156,8 +169,10 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 
 	// Create a numeric value from the price string
 	var priceNumeric pgtype.Numeric
+	util.LogInfo("Attempting to parse price: %s", req.Price)
 	err = priceNumeric.Scan(req.Price)
 	if err != nil {
+		util.LogError("Invalid price format: %s, error: %v", req.Price, err)
 		err := errors.New("invalid price format")
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -176,8 +191,10 @@ func (server *Server) CreateMedicine(c *gin.Context) {
 		SellerUsername: req.Seller,
 	}
 
+	util.LogInfo("Creating medicine with params: %+v", arg)
 	medicine, err = server.store.CreateMedicine(c, arg)
 	if err != nil {
+		util.LogError("Failed to create medicine in database: %v", err)
 		err := errors.New("failed to create medicine")
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

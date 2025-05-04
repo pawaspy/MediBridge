@@ -10,6 +10,9 @@ import {
   FaClipboardList, FaBoxOpen, FaChartLine, FaShippingFast, FaCog, FaTachometerAlt
 } from 'react-icons/fa';
 import MedicineManagement from '../components/MedicineManagement';
+import { sellerService } from '../api/apiService';
+import { removeUserData, getUserData, getToken } from '../utils/auth';
+import axios from 'axios';
 
 // Navbar component with advanced search integration
 const Navbar = ({ username, handleSignOut }) => {
@@ -140,96 +143,251 @@ export default function SellerDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [userData, setUserData] = useState({});
   const [medicines, setMedicines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [formVisible, setFormVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [savingMedicine, setSavingMedicine] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [currentMedicine, setCurrentMedicine] = useState({
     id: '',
     name: '',
     price: 0,
     expiry: '',
-    quantity: 0
+    quantity: 0,
+    description: '',
+    discount: 0
   });
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load seller data
-    const basicUserData = localStorage.getItem('userData');
-    const registrationData = localStorage.getItem('registrationFormData');
-
-    if (basicUserData) {
-      const parsedBasicData = JSON.parse(basicUserData);
-
-      // Check if user is a seller, redirect otherwise
-      if (parsedBasicData.role !== 'seller') {
-        navigate('/profile');
-        return;
+    const fetchSellerData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get user data from auth utils
+        const userDataFromStorage = getUserData();
+        
+        if (!userDataFromStorage) {
+          navigate('/login');
+          return;
+        }
+        
+        // Check if user is a seller
+        if (userDataFromStorage.role !== 'seller') {
+          navigate('/profile');
+          return;
+        }
+        
+        setUsername(userDataFromStorage.username);
+        setEmail(userDataFromStorage.email);
+        setFullName(userDataFromStorage.fullName);
+        
+        // Fetch seller profile data from API
+        const sellerResponse = await sellerService.getSeller(userDataFromStorage.username);
+        setUserData(sellerResponse.data);
+        
+        // Fetch seller medicines from API
+        try {
+          const medicinesResponse = await sellerService.getSellerMedicines(userDataFromStorage.username);
+          
+          if (medicinesResponse.data && medicinesResponse.data.length > 0) {
+            // Transform API data to match our frontend format if necessary
+            const formattedMedicines = medicinesResponse.data.map(med => ({
+              id: med.id,
+              name: med.name,
+              price: med.price,
+              expiry: med.expiry_date,
+              quantity: med.quantity,
+              description: med.description,
+              discount: med.discount
+            }));
+            setMedicines(formattedMedicines);
+          } else {
+            // Fall back to empty array if API returns empty
+            setMedicines([]);
+          }
+        } catch (medicineError) {
+          console.error('Error fetching medicines:', medicineError);
+          // Fall back to empty array if API fails
+          setMedicines([]);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching seller data:', err);
+        setError('Failed to load seller data. Please try again later.');
+        setLoading(false);
+        
+        // Fall back to local storage data if API fails
+        const basicUserData = localStorage.getItem('userData');
+        if (basicUserData) {
+          const parsedBasicData = JSON.parse(basicUserData);
+          setUsername(parsedBasicData.username);
+          setEmail(parsedBasicData.email);
+          setFullName(parsedBasicData.fullName);
+        }
+        
+        // Set empty medicines array if API fails
+        setMedicines([]);
       }
-
-      setUsername(parsedBasicData.username);
-      setEmail(parsedBasicData.email);
-
-      if (registrationData) {
-        const parsedRegData = JSON.parse(registrationData);
-        setFullName(parsedRegData.fullName);
-        setUserData(parsedRegData);
-      }
-    } else {
-      // No user data, redirect to login
-      navigate('/login');
-    }
-
-    // Load medicines from localStorage or use initial data
-    const storedMedicines = localStorage.getItem('sellerMedicines');
-    if (storedMedicines) {
-      setMedicines(JSON.parse(storedMedicines));
-    } else {
-      setMedicines(initialMedicines);
-      localStorage.setItem('sellerMedicines', JSON.stringify(initialMedicines));
-    }
+    };
+    
+    fetchSellerData();
   }, [navigate]);
 
   const handleSignOut = async () => {
-    localStorage.removeItem('userData');
-    sessionStorage.removeItem('navbarLayout');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    removeUserData();
     navigate('/', { replace: true });
   };
 
   // Medicine CRUD operations
-  const addMedicine = () => {
-    // Generate a random ID if not in edit mode
-    if (!editMode) {
-      const randomId = 'MED' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      currentMedicine.id = randomId;
+  const addMedicine = async () => {
+    try {
+      // Form validation
+      if (!currentMedicine.name) {
+        alert('Medicine name is required');
+        return;
+      }
+      
+      // Force set auth token before making request
+      const token = getToken();
+      if (!token) {
+        alert('Your session has expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+      
+      // Ensure token is set for this request
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      if (!currentMedicine.price || currentMedicine.price <= 0) {
+        alert('Price must be greater than 0');
+        return;
+      }
+      
+      if (!currentMedicine.expiry) {
+        alert('Expiry date is required');
+        return;
+      }
+      
+      if (!currentMedicine.quantity || currentMedicine.quantity < 0) {
+        alert('Quantity must be a positive number');
+        return;
+      }
+      
+      // Validate expiry date is in the future
+      const expiryDate = new Date(currentMedicine.expiry);
+      const today = new Date();
+      if (expiryDate <= today) {
+        alert('Expiry date must be in the future');
+        return;
+      }
+      
+      setSavingMedicine(true);
+      setError(null);
+      
+      const userData = getUserData();
+      
+      if (!userData) {
+        navigate('/login');
+        return;
+      }
+      
+      // Prepare data for API
+      const medicineData = {
+        name: currentMedicine.name,
+        description: currentMedicine.description || "No description provided",
+        expiry_date: currentMedicine.expiry,
+        quantity: parseInt(currentMedicine.quantity),
+        price: Number(currentMedicine.price).toFixed(2),
+        discount: parseInt(currentMedicine.discount) || 0,
+        seller: userData.username
+      };
+      
+      if (editMode && currentMedicine.id) {
+        // Update existing medicine
+        await sellerService.updateMedicine({
+          ...medicineData,
+          id: currentMedicine.id
+        });
+        
+        // Update local state
+        setMedicines(medicines.map(med =>
+          med.id === currentMedicine.id ? {...currentMedicine} : med
+        ));
+      } else {
+        // Create new medicine
+        const response = await sellerService.createMedicine(medicineData);
+        
+        // Update local state with the response from API
+        const newMedicine = {
+          id: response.data.id,
+          name: response.data.name,
+          price: response.data.price,
+          expiry: response.data.expiry_date,
+          quantity: response.data.quantity,
+          description: response.data.description,
+          discount: response.data.discount
+        };
+        
+        setMedicines([...medicines, newMedicine]);
+      }
+      
+      // Reset form
+      setCurrentMedicine({ id: '', name: '', price: 0, expiry: '', quantity: 0, description: '', discount: 0 });
+      setFormVisible(false);
+      setEditMode(false);
+      setSavingMedicine(false);
+    } catch (err) {
+      console.error('Error adding/updating medicine:', err);
+      setError('Failed to save medicine. Please try again.');
+      setSavingMedicine(false);
+      
+      // Add detailed error logging
+      if (err.response) {
+        console.error('Server error details:', {
+          status: err.response.status,
+          data: err.response.data,
+          headers: err.response.headers
+        });
+        
+        if (err.response.data && err.response.data.error) {
+          const errorMsg = err.response.data.error.message || err.response.data.error;
+          alert(`Error: ${errorMsg}`);
+        } else {
+          alert('Server error. Please check console for details.');
+        }
+      } else {
+        alert('Failed to save medicine. Please try again.');
+      }
     }
-
-    if (editMode) {
-      setMedicines(medicines.map(med =>
-        med.id === currentMedicine.id ? currentMedicine : med
-      ));
-    } else {
-      setMedicines([...medicines, currentMedicine]);
-    }
-
-    // Update localStorage
-    localStorage.setItem('sellerMedicines', JSON.stringify(
-      editMode
-        ? medicines.map(med => med.id === currentMedicine.id ? currentMedicine : med)
-        : [...medicines, currentMedicine]
-    ));
-
-    // Reset form
-    setCurrentMedicine({ id: '', name: '', price: 0, expiry: '', quantity: 0 });
-    setFormVisible(false);
-    setEditMode(false);
   };
 
-  const deleteMedicine = (id) => {
-    const updatedMedicines = medicines.filter(med => med.id !== id);
-    setMedicines(updatedMedicines);
-    localStorage.setItem('sellerMedicines', JSON.stringify(updatedMedicines));
+  const deleteMedicine = async (id) => {
+    try {
+      setDeletingId(id);
+      setError(null);
+      
+      // Call API to delete medicine
+      await sellerService.deleteMedicine(id);
+      
+      // Update local state
+      const updatedMedicines = medicines.filter(med => med.id !== id);
+      setMedicines(updatedMedicines);
+      setDeletingId(null);
+    } catch (err) {
+      console.error('Error deleting medicine:', err);
+      setError('Failed to delete medicine. Please try again.');
+      setDeletingId(null);
+      if (err.response && err.response.data && err.response.data.error) {
+        alert(`Error: ${err.response.data.error}`);
+      } else {
+        alert('Failed to delete medicine. Please try again.');
+      }
+    }
   };
 
   const editMedicine = (medicine) => {
@@ -449,6 +607,7 @@ export default function SellerDashboard() {
                         <th className="text-left py-4 px-4 text-[#00FFAB]">Name</th>
                         <th className="text-left py-4 px-4 text-[#00FFAB]">ID</th>
                         <th className="text-right py-4 px-4 text-[#00FFAB]">Price (₹)</th>
+                        <th className="text-right py-4 px-4 text-[#00FFAB]">Discount</th>
                         <th className="text-right py-4 px-4 text-[#00FFAB]">Expiry</th>
                         <th className="text-center py-4 px-4 text-[#00FFAB]">Action</th>
                       </tr>
@@ -459,6 +618,7 @@ export default function SellerDashboard() {
                           <td className="py-4 px-4 font-medium">{med.name}</td>
                           <td className="py-4 px-4 text-gray-300">{med.id}</td>
                           <td className="py-4 px-4 text-right font-bold">₹{med.price}</td>
+                          <td className="py-4 px-4 text-right">{med.discount || 0}%</td>
                           <td className="py-4 px-4 text-right">{new Date(med.expiry).toLocaleDateString()}</td>
                           <td className="py-4 px-4 flex justify-center">
                             <button
@@ -489,7 +649,7 @@ export default function SellerDashboard() {
                 <button
                   className="bg-[#00FFAB]/20 text-[#00FFAB] px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-[#00FFAB]/30 transition-colors font-bold text-lg shadow-md border border-[#00FFAB]/30"
                   onClick={() => {
-                    setCurrentMedicine({ id: '', name: '', price: 0, expiry: '', quantity: 0 });
+                    setCurrentMedicine({ id: '', name: '', price: 0, expiry: '', quantity: 0, description: '', discount: 0 });
                     setEditMode(false);
                     setFormVisible(true);
                   }}
@@ -499,6 +659,13 @@ export default function SellerDashboard() {
                 </button>
               </div>
               <br></br>
+
+              {/* Show error message if present */}
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg mb-6">
+                  {error}
+                </div>
+              )}
 
               {/* Add/Edit Medicine Form */}
               {formVisible && (
@@ -551,15 +718,47 @@ export default function SellerDashboard() {
                         min="0"
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-[#00FFAB] mb-2">Description</label>
+                      <textarea
+                        value={currentMedicine.description}
+                        onChange={(e) => setCurrentMedicine({ ...currentMedicine, description: e.target.value })}
+                        className="w-full bg-[#00FFAB]/10 border border-[#00FFAB]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter medicine description"
+                        rows="3"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[#00FFAB] mb-2">Discount (%)</label>
+                      <input
+                        type="number"
+                        value={currentMedicine.discount}
+                        onChange={(e) => setCurrentMedicine({ ...currentMedicine, discount: Number(e.target.value) })}
+                        className="w-full bg-[#00FFAB]/10 border border-[#00FFAB]/20 rounded-lg px-4 py-2 text-white placeholder-white/50"
+                        placeholder="Enter discount percentage"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
                   </div>
                   <br/>
 
                   <div className="flex gap-3 mt-6">
                     <button
-                      className="bg-[#00FFAB]/20 text-[#00FFAB] px-6 py-3 rounded-lg hover:bg-[#00FFAB]/30 transition-colors font-bold text-lg shadow-md flex items-center gap-2 border border-[#00FFAB]/30"
+                      className={`bg-[#00FFAB]/20 text-[#00FFAB] px-6 py-3 rounded-lg hover:bg-[#00FFAB]/30 transition-colors font-bold text-lg shadow-md flex items-center gap-2 border border-[#00FFAB]/30 ${savingMedicine ? 'opacity-70 cursor-not-allowed' : ''}`}
                       onClick={addMedicine}
+                      disabled={savingMedicine}
                     >
-                      {editMode ? <><FaEdit size={18} /> Save Changes</> : <><FaPlus size={18} /> Add Medicine</>}
+                      {savingMedicine ? (
+                        <>
+                          <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-[#00FFAB]/80 border-r-2 border-l-2 border-b-2 border-b-transparent"></span>
+                          {editMode ? 'Saving...' : 'Adding...'}
+                        </>
+                      ) : (
+                        editMode ? <><FaEdit size={18} /> Save Changes</> : <><FaPlus size={18} /> Add Medicine</>
+                      )}
                     </button>
                     <button
                       className="bg-[#1a1a1a] text-white px-6 py-3 rounded-lg hover:bg-[#1a1a1a]/90 transition-colors border border-gray-700 font-bold text-lg shadow-md"
@@ -567,6 +766,7 @@ export default function SellerDashboard() {
                         setFormVisible(false);
                         setEditMode(false);
                       }}
+                      disabled={savingMedicine}
                     >
                       Cancel
                     </button>
@@ -616,43 +816,74 @@ export default function SellerDashboard() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-white border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#00FFAB]/20">
-                        <th className="text-left py-4 px-4 text-[#00FFAB]">Name</th>
-                        <th className="text-left py-4 px-4 text-[#00FFAB]">ID</th>
-                        <th className="text-right py-4 px-4 text-[#00FFAB]">Price (₹)</th>
-                        <th className="text-right py-4 px-4 text-[#00FFAB]">Expiry</th>
-                        <th className="text-right py-4 px-4 text-[#00FFAB]">Quantity</th>
-                        <th className="text-center py-4 px-4 text-[#00FFAB]">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedMedicines.map(med => (
-                        <tr key={med.id} className="border-b border-gray-800/30 hover:bg-[#00FFAB]/5 transition-colors">
-                          <td className="py-4 px-4 font-medium">{med.name}</td>
-                          <td className="py-4 px-4 text-gray-300">{med.id}</td>
-                          <td className="py-4 px-4 text-right font-bold">₹{med.price}</td>
-                          <td className="py-4 px-4 text-right">{new Date(med.expiry).toLocaleDateString()}</td>
-                          <td className="py-4 px-4 text-right">{med.quantity}</td>
-                          <td className="py-4 px-4 flex justify-center gap-3">
-                            <button
-                              className="bg-[#00FFAB]/20 text-[#00FFAB] hover:bg-[#00FFAB]/30 transition-colors p-2 rounded-lg flex items-center gap-1 border border-[#00FFAB]/30"
-                              onClick={() => editMedicine(med)}
-                            >
-                              <FaEdit size={16} /> Edit
-                            </button>
-                            <button
-                              className="bg-red-500 text-white hover:bg-red-600 transition-colors p-2 rounded-lg flex items-center gap-1"
-                              onClick={() => deleteMedicine(med.id)}
-                            >
-                              <FaTrash size={16} /> Delete
-                            </button>
-                          </td>
+                  {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#00FFAB] border-r-2 border-b-2 border-b-transparent"></div>
+                    </div>
+                  ) : medicines.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">
+                      <p className="text-lg">No medicines added yet.</p>
+                      <button
+                        className="mt-4 bg-[#00FFAB]/20 text-[#00FFAB] px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#00FFAB]/30 transition-colors mx-auto"
+                        onClick={() => {
+                          setCurrentMedicine({ id: '', name: '', price: 0, expiry: '', quantity: 0, description: '', discount: 0 });
+                          setEditMode(false);
+                          setFormVisible(true);
+                        }}
+                      >
+                        <FaPlus size={14} /> Add your first medicine
+                      </button>
+                    </div>
+                  ) : (
+                    <table className="w-full text-white border-collapse">
+                      <thead>
+                        <tr className="border-b border-[#00FFAB]/20">
+                          <th className="text-left py-4 px-4 text-[#00FFAB]">Name</th>
+                          <th className="text-left py-4 px-4 text-[#00FFAB]">ID</th>
+                          <th className="text-left py-4 px-4 text-[#00FFAB]">Description</th>
+                          <th className="text-right py-4 px-4 text-[#00FFAB]">Price (₹)</th>
+                          <th className="text-right py-4 px-4 text-[#00FFAB]">Discount</th>
+                          <th className="text-right py-4 px-4 text-[#00FFAB]">Expiry</th>
+                          <th className="text-right py-4 px-4 text-[#00FFAB]">Quantity</th>
+                          <th className="text-center py-4 px-4 text-[#00FFAB]">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {sortedMedicines.map(med => (
+                          <tr key={med.id} className="border-b border-gray-800/30 hover:bg-[#00FFAB]/5 transition-colors">
+                            <td className="py-4 px-4 font-medium">{med.name}</td>
+                            <td className="py-4 px-4 text-gray-300">{med.id}</td>
+                            <td className="py-4 px-4 text-gray-300">{med.description ? (med.description.length > 30 ? med.description.substring(0, 30) + '...' : med.description) : 'No description'}</td>
+                            <td className="py-4 px-4 text-right font-bold">₹{med.price}</td>
+                            <td className="py-4 px-4 text-right">{med.discount || 0}%</td>
+                            <td className="py-4 px-4 text-right">{new Date(med.expiry).toLocaleDateString()}</td>
+                            <td className="py-4 px-4 text-right">{med.quantity}</td>
+                            <td className="py-4 px-4 flex justify-center gap-3">
+                              <button
+                                className="bg-[#00FFAB]/20 text-[#00FFAB] hover:bg-[#00FFAB]/30 transition-colors p-2 rounded-lg flex items-center gap-1 border border-[#00FFAB]/30"
+                                onClick={() => editMedicine(med)}
+                                disabled={deletingId === med.id}
+                              >
+                                <FaEdit size={16} /> Edit
+                              </button>
+                              <button
+                                className={`bg-red-500 text-white hover:bg-red-600 transition-colors p-2 rounded-lg flex items-center gap-1 ${deletingId === med.id ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                onClick={() => deleteMedicine(med.id)}
+                                disabled={deletingId === med.id}
+                              >
+                                {deletingId === med.id ? (
+                                  <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-white border-r-2 border-l-2 border-b-2 border-b-transparent"></span>
+                                ) : (
+                                  <FaTrash size={16} />
+                                )}
+                                {deletingId === med.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>

@@ -353,7 +353,7 @@ type loginDoctorResponse struct {
 	Doctor               doctorResponse `json:"doctor"`
 }
 
-func (server *Server) loginDoctor(ctx *gin.Context) {
+func (server *Server) LoginDoctor(ctx *gin.Context) {
 	var req loginDoctorRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
