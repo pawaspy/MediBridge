@@ -127,6 +127,7 @@ func (server *Server) setupRouter() {
 	publicRoutes.POST("/logindoctor", server.LoginDoctor)
 	publicRoutes.POST("/sellers", server.CreateSeller)
 	publicRoutes.POST("/loginseller", server.LoginSeller)
+	publicRoutes.POST("/reset-patient-password", server.ResetPatientPassword)
 
 	// Patient routes
 	publicRoutes.GET("/patients/:username", server.GetPatient)

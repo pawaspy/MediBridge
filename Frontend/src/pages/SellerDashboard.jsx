@@ -11,7 +11,8 @@ import {
 } from 'react-icons/fa';
 import MedicineManagement from '../components/MedicineManagement';
 import { sellerService } from '../api/apiService';
-import { removeUserData, getUserData } from '../utils/auth';
+import { removeUserData, getUserData, getToken } from '../utils/auth';
+import axios from 'axios';
 
 // Navbar component with advanced search integration
 const Navbar = ({ username, handleSignOut }) => {
@@ -251,6 +252,17 @@ export default function SellerDashboard() {
         return;
       }
       
+      // Force set auth token before making request
+      const token = getToken();
+      if (!token) {
+        alert('Your session has expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+      
+      // Ensure token is set for this request
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
       if (!currentMedicine.price || currentMedicine.price <= 0) {
         alert('Price must be greater than 0');
         return;
@@ -289,9 +301,9 @@ export default function SellerDashboard() {
         name: currentMedicine.name,
         description: currentMedicine.description || "No description provided",
         expiry_date: currentMedicine.expiry,
-        quantity: currentMedicine.quantity,
-        price: currentMedicine.price.toString(),
-        discount: currentMedicine.discount || 0,
+        quantity: parseInt(currentMedicine.quantity),
+        price: Number(currentMedicine.price).toFixed(2),
+        discount: parseInt(currentMedicine.discount) || 0,
         seller: userData.username
       };
       
@@ -333,8 +345,21 @@ export default function SellerDashboard() {
       console.error('Error adding/updating medicine:', err);
       setError('Failed to save medicine. Please try again.');
       setSavingMedicine(false);
-      if (err.response && err.response.data && err.response.data.error) {
-        alert(`Error: ${err.response.data.error}`);
+      
+      // Add detailed error logging
+      if (err.response) {
+        console.error('Server error details:', {
+          status: err.response.status,
+          data: err.response.data,
+          headers: err.response.headers
+        });
+        
+        if (err.response.data && err.response.data.error) {
+          const errorMsg = err.response.data.error.message || err.response.data.error;
+          alert(`Error: ${errorMsg}`);
+        } else {
+          alert('Server error. Please check console for details.');
+        }
       } else {
         alert('Failed to save medicine. Please try again.');
       }

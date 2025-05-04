@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import logo from '../removed-bg-medibridge.png';
 import { FaSearch, FaUser, FaCaretDown, FaShoppingCart, FaRobot, FaPaperPlane } from 'react-icons/fa';
 import { Canvas } from '@react-three/fiber';
 import { Background } from '../components/Background';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { io } from 'socket.io-client';
 
 // MainNavbar from MainWebsite
 const MainNavbar = ({ username, handleSignOut, userRole }) => {
@@ -122,29 +124,85 @@ const MainNavbar = ({ username, handleSignOut, userRole }) => {
 
 const Healia = () => {
   const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [userRole, setUserRole] = useState("");
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const API_BASE_URL = "http://localhost:3000";
 
-  React.useEffect(() => {
+  useEffect(() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
       const { username, role } = JSON.parse(userData);
       setUsername(username);
       setUserRole(role);
     }
+
+    // Initialize Socket.IO connection
+    socketRef.current = io(API_BASE_URL);
+
+    socketRef.current.on('connect', () => {
+      console.log('Connected to MediBridge AI server');
+    });
+
+    socketRef.current.on('bot_response', (data) => {
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { type: 'bot', text: data.message }
+      ]);
+      setLoading(false);
+    });
+
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setLoading(false);
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
+
+  // Scroll to bottom of messages when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
+    
+    const userMessage = input.trim();
+    setMessages(prev => [...prev, { type: 'user', text: userMessage }]);
+    setInput("");
     setLoading(true);
-    // Simulate AI response
-    setTimeout(() => {
-      setResponse("I'm Healia AI. Based on your symptoms, I recommend consulting a healthcare professional for a detailed diagnosis. If you have a fever, cough, or pain, please specify the duration and severity.");
+
+    try {
+      // Try using Socket.IO first (realtime communication)
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('chat_message', { message: userMessage });
+      } else {
+        // Fallback to REST API if socket is not available
+        const response = await axios.post(`${API_BASE_URL}/api/chat`, {
+          message: userMessage
+        });
+        
+        setMessages(prev => [...prev, { type: 'bot', text: response.data.response }]);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => [...prev, { 
+        type: 'bot', 
+        text: 'I apologize, but I encountered an error while processing your request. Please try again.' 
+      }]);
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -164,35 +222,41 @@ const Healia = () => {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] pt-16 pb-24">
         <div className="w-[90vw] md:w-[70vw] max-w-4xl min-h-[60vh] bg-[#181c1f]/90 rounded-3xl shadow-2xl border border-[#00D37F]/10 p-0 flex flex-col overflow-hidden mt-8">
           {/* Chat area */}
-          <div className="flex-1 px-6 py-8 flex flex-col gap-6">
-            {/* User message bubble */}
-            {input && (
-              <div className="flex justify-end items-start gap-2">
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-[#00D37F] text-black px-5 py-3 rounded-2xl rounded-br-sm max-w-[80%] text-lg shadow-md break-words">
-                      {input}
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-[#00D37F] flex items-center justify-center text-black text-2xl font-bold shadow-md">
-                      <FaUser />
-                    </div>
-                  </div>
-                </div>
+          <div className="flex-1 px-6 py-8 flex flex-col gap-6 overflow-y-auto">
+            {/* Messages */}
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center text-gray-400 py-12">
+                <FaRobot className="text-5xl mb-4 text-[#00D37F]" />
+                <div className="text-xl">Hi, I'm <span className="text-[#00D37F] font-bold">Healia AI</span>.<br/>How can I help you today?</div>
               </div>
-            )}
-            {/* AI response bubble */}
-            {response && (
-              <div className="flex justify-start items-start gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-[#23272b] flex items-center justify-center text-[#00D37F] text-2xl shadow-md">
-                    <FaRobot />
-                  </div>
-                  <div className="bg-[#23272b] text-[#00D37F] px-5 py-3 rounded-2xl rounded-bl-sm max-w-[80%] text-lg shadow-md break-words">
-                    {response}
-                  </div>
+            ) : (
+              messages.map((msg, index) => (
+                <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} items-start gap-2`}>
+                  {msg.type === 'user' ? (
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-[#00D37F] text-black px-5 py-3 rounded-2xl rounded-br-sm max-w-[80%] text-lg shadow-md break-words">
+                          {msg.text}
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-[#00D37F] flex items-center justify-center text-black text-2xl font-bold shadow-md">
+                          <FaUser />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-[#23272b] flex items-center justify-center text-[#00D37F] text-2xl shadow-md">
+                        <FaRobot />
+                      </div>
+                      <div className="bg-[#23272b] text-[#00D37F] px-5 py-3 rounded-2xl rounded-bl-sm max-w-[80%] text-lg shadow-md break-words">
+                        {msg.text}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ))
             )}
+            
             {/* Loading bubble */}
             {loading && (
               <div className="flex justify-start items-start gap-2">
@@ -206,14 +270,9 @@ const Healia = () => {
                 </div>
               </div>
             )}
-            {/* Empty state */}
-            {!input && !response && !loading && (
-              <div className="flex flex-col items-center justify-center text-center text-gray-400 py-12">
-                <FaRobot className="text-5xl mb-4 text-[#00D37F]" />
-                <div className="text-xl">Hi, I'm <span className="text-[#00D37F] font-bold">Healia AI</span>.<br/>How can I help you today?</div>
-              </div>
-            )}
+            <div ref={messagesEndRef} />
           </div>
+          
           {/* Input area */}
           <form onSubmit={handleSend} className="flex items-center gap-4 border-t border-[#00D37F]/10 bg-[#181c1f] px-6 py-5">
             <input

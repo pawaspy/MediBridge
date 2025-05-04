@@ -140,12 +140,13 @@ export const registerUser = async (formData, role) => {
 export const loginUser = async (username, password, role) => {
   try {
     let response;
+    const requestData = { username, password };
+    console.log(`Login attempt - Role: ${role}, Username: ${username}, Password length: ${password.length}`);
+    console.log('Login request data:', requestData);
+    
     switch (role) {
       case 'patient':
-        response = await authService.loginPatient({
-          username,
-          password
-        });
+        response = await authService.loginPatient(requestData);
         // Store user data and token
         if (response.data) {
           const userData = {

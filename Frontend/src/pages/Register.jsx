@@ -200,7 +200,7 @@ export default function Register() {
         localStorage.setItem('registrationFormData', JSON.stringify(completeFormData));
         
         // Redirect to main page
-        navigate('/main');
+          navigate('/main');
       } catch (error) {
         console.error('Registration error:', error);
         
@@ -582,7 +582,7 @@ export default function Register() {
           <h2 className="text-4xl sm:text-5xl font-extrabold text-center text-[#00FFB2] tracking-tight font-poppins mb-4 sm:mb-6">
             Create Account
           </h2>
-          
+
           <p className="text-center text-gray-300 mb-6 sm:mb-8">
             Join MediBridge and experience healthcare services online
           </p>
@@ -646,7 +646,7 @@ export default function Register() {
                     />
                     {errors.username && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.username}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[#00FFB2] text-sm sm:text-base mb-1.5 font-medium">Email</label>
                     <input
@@ -659,7 +659,7 @@ export default function Register() {
                     />
                     {errors.email && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.email}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[#00FFB2] text-sm sm:text-base mb-1.5 font-medium">Mobile Number</label>
                     <div className="flex">
@@ -685,7 +685,7 @@ export default function Register() {
                     </div>
                     {errors.mobile && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.mobile}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[#00FFB2] text-sm sm:text-base mb-1.5 font-medium">Password</label>
                     <input
@@ -698,7 +698,7 @@ export default function Register() {
                     />
                     {errors.password && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.password}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[#00FFB2] text-sm sm:text-base mb-1.5 font-medium">Confirm Password</label>
                     <input
@@ -711,7 +711,7 @@ export default function Register() {
                     />
                   </div>
                 </div>
-                
+
                 {/* Role-specific Fields */}
                 {role && (
                   <div className="pt-2 sm:pt-4 border-t border-[#00FFB2]/20">
@@ -723,7 +723,7 @@ export default function Register() {
                     {renderRoleForm()}
                   </div>
                 )}
-                
+
                 <div className="pt-2 sm:pt-4">
                   <button
                     type="submit"
@@ -737,13 +737,13 @@ export default function Register() {
                 <div className="text-center">
                   <p className="text-gray-300">
                     Already have an account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/login')}
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login')}
                       className="text-[#00FFB2] hover:underline focus:outline-none"
-                    >
+                  >
                       Sign In
-                    </button>
+                  </button>
                   </p>
                 </div>
               </div>
